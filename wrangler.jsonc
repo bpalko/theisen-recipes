@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "theisen-recipes",
+  "compatibility_date": "2026-11-26",
+  "pages_build_output_dir": "dist",
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true,
+    },
+  },
+  "r2_buckets": [
+    {
+      "binding": "RECIPES",
+      "bucket_name": "theisen-recipes",
+    },
+  ],
+}
