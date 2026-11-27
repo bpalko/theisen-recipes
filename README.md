@@ -2,7 +2,7 @@
 
 A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the search bar at the bottom opens an A–Z list that filters as you type; family members can add recipes and photos.
 
-The 15 recipes in `src/content/recipes/` are **sample starters**. Swap them for real Theisen recipes, or leave them and add the real ones through the **Add recipe** screen (those persist in R2, not git).
+Recipes and photos live in the **R2** bucket (`theisen-recipes`), not in git. Add more from the **Add recipe** screen.
 
 ![Bookshelf](docs/screenshots/02-bookshelf.png)
 
@@ -45,34 +45,9 @@ pnpm check    # tests + typecheck + production build
 
 1. Open the bookshelf (in production, Cloudflare Access emails a one-time PIN).
 2. Click **Add recipe**.
-3. Give it a **title** (the only required field). Book, contributor, times, ingredients, steps, and photos are optional.
+3. Give it a **title**, plus a **photo or the recipe text** (ingredients or steps). Book, contributor, times, and notes are optional.
 4. Attach pictures if you have them (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
 5. Save. The recipe JSON and photos go to the **R2 bucket**; they survive deploys.
-
-### Seed / sample markdown
-
-Drop a `.md` file in `src/content/recipes/`:
-
-```md
----
-title: Saturday Banana Bread
-category: baking
-contributor: Aunt Carol
-prepTime: 15 min
-cookTime: 55 min
-servings: "1 loaf"
-tags: [quick-bread, freezer]
-notes: The spottier the bananas, the better.
----
-
-## Ingredients
-
-- 3 very ripe bananas, mashed
-
-## Steps
-
-1. Heat the oven to 350°F.
-```
 
 `category` must be one of: `baking`, `mains`, `soups`, `sides`, `desserts`, `holidays`.
 
@@ -105,7 +80,6 @@ Access, not this repo, holds the family email list. Recipe JSON, photos, and the
 
 | Piece | Where |
 | --- | --- |
-| Seed recipes | `src/content/recipes/*.md` (bundled at build) |
 | Family recipes | R2 `recipes/{slug}.json` |
 | Photos | R2 `photos/{id}.{ext}`, served at `/api/photos/:id` |
 | Auth | Cloudflare Access (email OTP) + optional origin JWT verification |
