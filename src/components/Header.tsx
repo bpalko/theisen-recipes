@@ -1,4 +1,3 @@
-import type { FormEvent } from "react";
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { FILTER_PILLS, type BookId } from "../../shared/books.ts";
 
@@ -18,15 +17,6 @@ export function Header() {
     if (id === "all") next.delete("book");
     else next.set("book", id);
     navigate({ pathname: "/", search: next.toString() }, { replace: true });
-  }
-
-  async function signOut(event: FormEvent) {
-    event.preventDefault();
-    await fetch("/api/logout", {
-      method: "POST",
-      headers: { Accept: "application/json" },
-    });
-    window.location.href = "/";
   }
 
   return (
@@ -55,11 +45,9 @@ export function Header() {
         <NavLink className="text-link" to="/index">
           A–Z Index <span aria-hidden="true">↗</span>
         </NavLink>
-        <form onSubmit={signOut}>
-          <button className="icon-btn" type="submit" title="Sign out">
-            Lock
-          </button>
-        </form>
+        <a className="icon-btn" href="/cdn-cgi/access/logout" title="Sign out">
+          Sign out
+        </a>
       </div>
     </header>
   );
