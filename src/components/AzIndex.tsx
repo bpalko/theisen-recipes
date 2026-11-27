@@ -1,33 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getBook } from "../../shared/books.ts";
 import { groupRecipesByLetter, searchRecipes } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
+import { useSearchQuery } from "./SearchDock.tsx";
 
 export function AzIndex() {
   const { recipes } = useRecipes();
-  const [query, setQuery] = useState("");
+  const { query, closeSearch } = useSearchQuery();
   const filtered = useMemo(() => searchRecipes(recipes, query), [recipes, query]);
   const groups = useMemo(() => groupRecipesByLetter(filtered), [filtered]);
 
   return (
-    <main className="index-page">
-      <div className="index-head">
-        <div>
-          <p className="eyebrow">Directory</p>
-          <h1>A–Z Index</h1>
-        </div>
-        <label className="search">
-          <span className="sr-only">Search recipes</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search titles, ingredients, tags, family…"
-            type="search"
-          />
-        </label>
-      </div>
-
+    <div className="index-page is-sheet">
       {groups.length === 0 ? (
         <p className="empty">No recipes match that search.</p>
       ) : (
@@ -39,10 +24,16 @@ export function AzIndex() {
                 const book = getBook(recipe.category);
                 return (
                   <li key={recipe.slug}>
-                    <Link to={`/recipe/${recipe.slug}`}>{recipe.title}</Link>
-                    <span>
-                      {book?.title} · {recipe.contributor}
-                    </span>
+                    <Link
+                      className="index-row"
+                      to={`/recipe/${recipe.slug}`}
+                      onClick={() => closeSearch()}
+                    >
+                      <span className="index-row-title">{recipe.title}</span>
+                      <span className="index-row-meta">
+                        {[book?.title, recipe.contributor].filter(Boolean).join(" · ")}
+                      </span>
+                    </Link>
                   </li>
                 );
               })}
@@ -50,6 +41,6 @@ export function AzIndex() {
           </section>
         ))
       )}
-    </main>
+    </div>
   );
 }

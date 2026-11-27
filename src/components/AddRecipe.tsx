@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { BOOKS } from "../../shared/books.ts";
+import { BOOKS, DEFAULT_BOOK_ID } from "../../shared/books.ts";
 import {
   ALLOWED_PHOTO_TYPES,
   PHOTO_MAX_BYTES,
   PHOTO_MAX_COUNT,
+  validateDraft,
   type Recipe,
 } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
@@ -58,6 +59,36 @@ export function AddRecipe() {
     const data = new FormData(form);
     for (const photo of photos) data.append("photos", photo.file);
 
+    const parsed = validateDraft(
+      {
+        title: String(data.get("title") ?? ""),
+        category: String(data.get("category") ?? "") as Recipe["category"],
+        contributor: String(data.get("contributor") ?? ""),
+        prepTime: String(data.get("prepTime") ?? ""),
+        cookTime: String(data.get("cookTime") ?? ""),
+        servings: String(data.get("servings") ?? ""),
+        notes: String(data.get("notes") ?? ""),
+        tags: String(data.get("tags") ?? "")
+          .split(/[\n,]/)
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        ingredients: String(data.get("ingredients") ?? "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+        steps: String(data.get("steps") ?? "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+      },
+      { photoCount: photos.length },
+    );
+    if (!parsed.ok) {
+      setError(parsed.error);
+      setBusy(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/recipes", {
         method: "POST",
@@ -83,7 +114,7 @@ export function AddRecipe() {
       <p className="eyebrow">New card for the shelf</p>
       <h1>Add a family recipe</h1>
       <p className="lede">
-        Photos live in the Cloudflare R2 bucket. The recipe is saved next to them so it survives deploys.
+        A title is required, plus a photo or the recipe text (ingredients or steps). Everything else is optional.
       </p>
 
       {error ? (
@@ -95,11 +126,11 @@ export function AddRecipe() {
       <form className="recipe-form" onSubmit={onSubmit}>
         <label>
           Title *
-          <input name="title" required placeholder="Grandma’s rye bread" />
+          <input name="title" required minLength={2} placeholder="Grandma’s rye bread" autoComplete="off" />
         </label>
         <label>
-          Book / category *
-          <select name="category" required defaultValue="baking">
+          Book / category
+          <select name="category" defaultValue={DEFAULT_BOOK_ID}>
             {BOOKS.map((book) => (
               <option key={book.id} value={book.id}>
                 {book.number} {book.title}
@@ -108,21 +139,21 @@ export function AddRecipe() {
           </select>
         </label>
         <label>
-          Contributed by *
-          <input name="contributor" required placeholder="Aunt Carol" />
+          Contributed by
+          <input name="contributor" placeholder="Aunt Carol" />
         </label>
         <div className="form-row">
           <label>
-            Prep time *
-            <input name="prepTime" required placeholder="20 min" />
+            Prep time
+            <input name="prepTime" placeholder="20 min" />
           </label>
           <label>
-            Cook time *
-            <input name="cookTime" required placeholder="40 min" />
+            Cook time
+            <input name="cookTime" placeholder="40 min" />
           </label>
           <label>
-            Servings *
-            <input name="servings" required placeholder="6" />
+            Servings
+            <input name="servings" placeholder="6" />
           </label>
         </div>
         <label>
@@ -130,12 +161,12 @@ export function AddRecipe() {
           <input name="tags" placeholder="one per line or comma-separated" />
         </label>
         <label>
-          Ingredients *
-          <textarea name="ingredients" required rows={8} placeholder={"1 cup milk\n2 eggs"} />
+          Ingredients
+          <textarea name="ingredients" rows={6} placeholder={"1 cup milk\n2 eggs"} />
         </label>
         <label>
-          Steps *
-          <textarea name="steps" required rows={8} placeholder={"Warm the milk.\nStir in the eggs."} />
+          Steps
+          <textarea name="steps" rows={6} placeholder={"Warm the milk.\nStir in the eggs."} />
         </label>
         <label>
           Family notes
@@ -144,7 +175,10 @@ export function AddRecipe() {
 
         <fieldset className="photo-field">
           <legend>Pictures</legend>
-          <p>Optional. JPEG, PNG, WebP, or GIF. Up to {PHOTO_MAX_COUNT} photos, 8 MB each.</p>
+          <p>
+            Needed if you skip ingredients and steps. JPEG, PNG, WebP, or GIF. Up to {PHOTO_MAX_COUNT}{" "}
+            photos, 8 MB each.
+          </p>
           <input
             type="file"
             accept={ALLOWED_PHOTO_TYPES.join(",")}

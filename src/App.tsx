@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AddRecipe } from "./components/AddRecipe.tsx";
 import { AzIndex } from "./components/AzIndex.tsx";
@@ -5,19 +6,66 @@ import { BookToc } from "./components/BookToc.tsx";
 import { Bookshelf } from "./components/Bookshelf.tsx";
 import { Header } from "./components/Header.tsx";
 import { RecipeView } from "./components/RecipeView.tsx";
+import { SearchDock, SearchQueryProvider, useSearchQuery } from "./components/SearchDock.tsx";
+
+function OpenSearchHome() {
+  const { openSearch } = useSearchQuery();
+  useEffect(() => {
+    openSearch();
+  }, [openSearch]);
+  return <Navigate to="/" replace />;
+}
+
+function AppShell() {
+  const { searching, keyboardOpen } = useSearchQuery();
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    sheetRef.current?.scrollTo(0, 0);
+  }, [searching]);
+
+  return (
+    <div
+      className={[
+        "app-shell",
+        searching ? "is-searching" : "",
+        searching && keyboardOpen ? "is-keyboard" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <Header />
+      <div className="app-main">
+        <div className="app-page" aria-hidden={searching || undefined}>
+          <Routes>
+            <Route path="/" element={<Bookshelf />} />
+            <Route path="/book/:bookId" element={<BookToc />} />
+            <Route path="/recipe/:slug" element={<RecipeView />} />
+            <Route path="/index" element={<OpenSearchHome />} />
+            <Route path="/add" element={<AddRecipe />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </div>
+      <div
+        ref={sheetRef}
+        className={searching ? "search-sheet is-open" : "search-sheet"}
+        role="dialog"
+        aria-label="Recipe search"
+        aria-hidden={searching ? undefined : true}
+        inert={searching ? undefined : true}
+      >
+        <AzIndex />
+      </div>
+      <SearchDock />
+    </div>
+  );
+}
 
 export default function App() {
   return (
-    <div className="app-shell">
-      <Header />
-      <Routes>
-        <Route path="/" element={<Bookshelf />} />
-        <Route path="/book/:bookId" element={<BookToc />} />
-        <Route path="/recipe/:slug" element={<RecipeView />} />
-        <Route path="/index" element={<AzIndex />} />
-        <Route path="/add" element={<AddRecipe />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </div>
+    <SearchQueryProvider>
+      <AppShell />
+    </SearchQueryProvider>
   );
 }

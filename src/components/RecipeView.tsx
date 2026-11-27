@@ -22,6 +22,12 @@ export function RecipeView() {
 
   if (!recipe || !book) return <Navigate to="/index" replace />;
 
+  const meta = [
+    recipe.prepTime ? { label: "Prep", value: recipe.prepTime } : null,
+    recipe.cookTime ? { label: "Cook", value: recipe.cookTime } : null,
+    recipe.servings ? { label: "Serves", value: recipe.servings } : null,
+  ].filter((item): item is { label: string; value: string } => item != null);
+
   return (
     <main className="recipe-page">
       <div className="recipe-toolbar print-hide">
@@ -58,24 +64,22 @@ export function RecipeView() {
         Book {book.number} : {book.title}
       </p>
       <h1>{recipe.title}</h1>
-      <p className="byline">
-        Contributed by <strong>{recipe.contributor}</strong>
-      </p>
+      {recipe.contributor ? (
+        <p className="byline">
+          Contributed by <strong>{recipe.contributor}</strong>
+        </p>
+      ) : null}
 
-      <dl className="meta">
-        <div>
-          <dt>Prep</dt>
-          <dd>{recipe.prepTime}</dd>
-        </div>
-        <div>
-          <dt>Cook</dt>
-          <dd>{recipe.cookTime}</dd>
-        </div>
-        <div>
-          <dt>Serves</dt>
-          <dd>{recipe.servings}</dd>
-        </div>
-      </dl>
+      {meta.length > 0 ? (
+        <dl className="meta">
+          {meta.map((item) => (
+            <div key={item.label}>
+              <dt>{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
 
       {recipe.tags.length > 0 ? (
         <p className="tag-row" data-search={searchBits}>
@@ -85,38 +89,44 @@ export function RecipeView() {
         </p>
       ) : null}
 
-      <div className="recipe-grid">
-        <section>
-          <h2>Ingredients</h2>
-          <ul className="checklist">
-            {recipe.ingredients.map((item, index) => (
-              <li key={item}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(checked[index])}
-                    onChange={() =>
-                      setChecked((current) => ({ ...current, [index]: !current[index] }))
-                    }
-                  />
-                  <span>{item}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section>
-          <h2>Steps</h2>
-          <ol className="steps">
-            {recipe.steps.map((step, index) => (
-              <li key={step}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <p>{step}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </div>
+      {recipe.ingredients.length > 0 || recipe.steps.length > 0 ? (
+        <div className="recipe-grid">
+          {recipe.ingredients.length > 0 ? (
+            <section>
+              <h2>Ingredients</h2>
+              <ul className="checklist">
+                {recipe.ingredients.map((item, index) => (
+                  <li key={item}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(checked[index])}
+                        onChange={() =>
+                          setChecked((current) => ({ ...current, [index]: !current[index] }))
+                        }
+                      />
+                      <span>{item}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {recipe.steps.length > 0 ? (
+            <section>
+              <h2>Steps</h2>
+              <ol className="steps">
+                {recipe.steps.map((step, index) => (
+                  <li key={step}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <p>{step}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
 
       {recipe.notes ? (
         <aside className="family-notes">

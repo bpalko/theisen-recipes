@@ -33,12 +33,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const form = await request.formData();
-  const parsed = validateDraft(readDraft(form));
-  if (!parsed.ok) return json({ error: parsed.error }, 400);
-
   const files = form
     .getAll("photos")
     .filter((value): value is File => value instanceof File && value.size > 0);
+  const parsed = validateDraft(readDraft(form), { photoCount: files.length });
+  if (!parsed.ok) return json({ error: parsed.error }, 400);
 
   if (files.length > PHOTO_MAX_COUNT) {
     return json({ error: `You can attach up to ${PHOTO_MAX_COUNT} photos.` }, 400);

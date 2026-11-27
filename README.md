@@ -1,6 +1,6 @@
 # Theisen Recipes
 
-A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the A–Z index and live search find anything; family members can add recipes and photos.
+A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the search bar at the bottom opens an A–Z list that filters as you type; family members can add recipes and photos.
 
 The 15 recipes in `src/content/recipes/` are **sample starters**. Swap them for real Theisen recipes, or leave them and add the real ones through the **Add recipe** screen (those persist in R2, not git).
 
@@ -45,8 +45,8 @@ pnpm check    # tests + typecheck + production build
 
 1. Open the bookshelf (in production, Cloudflare Access emails a one-time PIN).
 2. Click **Add recipe**.
-3. Fill in title, book, contributor, times, ingredients, and steps.
-4. Attach pictures (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
+3. Give it a **title** (the only required field). Book, contributor, times, ingredients, steps, and photos are optional.
+4. Attach pictures if you have them (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
 5. Save. The recipe JSON and photos go to the **R2 bucket**; they survive deploys.
 
 ### Seed / sample markdown

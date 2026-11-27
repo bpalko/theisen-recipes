@@ -50,12 +50,12 @@ describe("recipe indexing", () => {
     expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" })));
   });
 
-  it("searches title, contributor, tags, and ingredients", () => {
-    expect(searchRecipes(recipes, "cinnamon").map((recipe) => recipe.slug)).toContain(
-      "grandma-theisen-cinnamon-rolls",
-    );
-    expect(searchRecipes(recipes, "Uncle Jim").length).toBeGreaterThan(0);
-    expect(searchRecipes(recipes, "paprika").length).toBeGreaterThan(0);
+  it("narrows by title prefix so a single letter drops other groups", () => {
+    const el = searchRecipes(recipes, "L");
+    expect(el.map((recipe) => recipe.slug)).toEqual(["lemon-bars"]);
+    expect(groupRecipesByLetter(el).map((group) => group.letter)).toEqual(["L"]);
+    expect(searchRecipes(recipes, "Lemon B").map((recipe) => recipe.slug)).toEqual(["lemon-bars"]);
+    expect(searchRecipes(recipes, "paprika")).toEqual([]);
     expect(searchRecipes(recipes, "zzzz-nope")).toEqual([]);
   });
 
@@ -97,6 +97,40 @@ describe("add-recipe validation", () => {
       steps: ["Mix and bake."],
     });
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects a title-only draft without photos or recipe text", () => {
+    const result = validateDraft({ title: "Rye Bread" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/photo or the recipe text/i);
+    }
+  });
+
+  it("accepts a title with ingredients and defaults the book", () => {
+    const result = validateDraft({ title: "Rye Bread", ingredients: ["3 cups rye flour"] });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.draft.title).toBe("Rye Bread");
+      expect(result.draft.category).toBe("baking");
+      expect(result.draft.contributor).toBe("");
+      expect(result.draft.ingredients).toEqual(["3 cups rye flour"]);
+      expect(result.draft.steps).toEqual([]);
+    }
+  });
+
+  it("accepts a title with steps and no ingredients", () => {
+    const result = validateDraft({ title: "Rye Bread", steps: ["Mix and bake."] });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a title with a photo and no recipe text", () => {
+    const result = validateDraft({ title: "Rye Bread" }, { photoCount: 1 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.draft.ingredients).toEqual([]);
+      expect(result.draft.steps).toEqual([]);
+    }
   });
 
   it("slugifies titles and avoids collisions", () => {

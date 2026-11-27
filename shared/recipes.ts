@@ -1,4 +1,4 @@
-import { BOOKS, type BookId } from "./books.ts";
+import { BOOKS, DEFAULT_BOOK_ID, type BookId } from "./books.ts";
 import {
   extractSectionList,
   parseFrontmatter,
@@ -96,28 +96,21 @@ export function recipesForBook(recipes: Recipe[], bookId: BookId): Recipe[] {
   return sortRecipesByTitle(recipes.filter((recipe) => recipe.category === bookId));
 }
 
-export function searchRecipes(recipes: Recipe[], query: string): Recipe[] {
-  const terms = query
+function compactSearchText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .split(/\s+/)
-    .map((term) => term.trim())
-    .filter(Boolean);
-  if (terms.length === 0) return sortRecipesByTitle(recipes);
+    .replaceAll(/[^a-z0-9]+/g, "");
+}
+
+/** Match titles from the start so "L" keeps only the L group, not every recipe with an "l" in the ingredients. */
+export function searchRecipes(recipes: Recipe[], query: string): Recipe[] {
+  const needle = compactSearchText(query);
+  if (!needle) return sortRecipesByTitle(recipes);
 
   return sortRecipesByTitle(
-    recipes.filter((recipe) => {
-      const haystack = [
-        recipe.title,
-        recipe.category,
-        recipe.contributor,
-        recipe.notes,
-        ...recipe.tags,
-        ...recipe.ingredients,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return terms.every((term) => haystack.includes(term));
-    }),
+    recipes.filter((recipe) => compactSearchText(recipe.title).startsWith(needle)),
   );
 }
 
@@ -148,7 +141,10 @@ export function mergeRecipes(seed: Recipe[], stored: Recipe[]): Recipe[] {
   return sortRecipesByTitle([...bySlug.values()]);
 }
 
-export function validateDraft(input: Partial<RecipeDraft>): {
+export function validateDraft(
+  input: Partial<RecipeDraft>,
+  options: { photoCount?: number } = {},
+): {
   ok: true;
   draft: RecipeDraft;
 } | { ok: false; error: string } {
@@ -162,23 +158,20 @@ export function validateDraft(input: Partial<RecipeDraft>): {
   const tags = (input.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
   const ingredients = (input.ingredients ?? []).map((item) => item.trim()).filter(Boolean);
   const steps = (input.steps ?? []).map((item) => item.trim()).filter(Boolean);
+  const photoCount = options.photoCount ?? 0;
 
   if (title.length < 2) return { ok: false, error: "Add a recipe title." };
-  if (!category || !isBookId(category)) {
-    return { ok: false, error: "Pick a book / category." };
+  const hasText = ingredients.length > 0 || steps.length > 0;
+  if (!hasText && photoCount < 1) {
+    return { ok: false, error: "Add a photo or the recipe text (ingredients or steps)." };
   }
-  if (!contributor) return { ok: false, error: "Who is this recipe from?" };
-  if (!prepTime || !cookTime || !servings) {
-    return { ok: false, error: "Fill in prep time, cook time, and servings." };
-  }
-  if (ingredients.length === 0) return { ok: false, error: "Add at least one ingredient." };
-  if (steps.length === 0) return { ok: false, error: "Add at least one step." };
+  const book = category && isBookId(category) ? category : DEFAULT_BOOK_ID;
 
   return {
     ok: true,
     draft: {
       title,
-      category,
+      category: book,
       contributor,
       prepTime,
       cookTime,
