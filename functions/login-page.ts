@@ -1,3 +1,10 @@
+export const LOGIN_PAGE_HEADERS = {
+  "content-type": "text/html; charset=utf-8",
+  "cache-control": "no-store",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export function loginPageHtml(options: { error?: string; nextPath: string }): string {
   const error = options.error
     ? `<p class="error" role="alert">${escapeHtml(options.error)}</p>`

@@ -9,10 +9,13 @@ import {
 } from "../../shared/recipes.ts";
 import { slugify, uniqueSlug } from "../../shared/slug.ts";
 import {
+  encodedJsonSize,
   json,
   listStoredRecipes,
+  maxBucketBytes,
   putPhoto,
   putStoredRecipe,
+  rejectIfOverStorageCap,
   requireBucket,
 } from "../lib/store.ts";
 
@@ -44,11 +47,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json({ error: `You can attach up to ${PHOTO_MAX_COUNT} photos.` }, 400);
   }
 
-  const existing = await listStoredRecipes(bucket);
-  const slugs = new Set(existing.map((recipe) => recipe.slug));
-  const slug = uniqueSlug(slugify(parsed.draft.title), slugs);
-  const now = new Date().toISOString();
-  const photos: RecipePhoto[] = [];
+  const pendingPhotos: Array<{
+    id: string;
+    bytes: ArrayBuffer;
+    contentType: string;
+    ext: string;
+  }> = [];
 
   for (const file of files) {
     if (file.size > PHOTO_MAX_BYTES) {
@@ -60,14 +64,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
     const ext = photoExtension(type);
     if (!ext) return json({ error: "Unsupported photo type." }, 400);
-    const id = crypto.randomUUID();
-    await putPhoto(bucket, id, await file.arrayBuffer(), type, ext);
-    photos.push({
-      id,
+    pendingPhotos.push({
+      id: crypto.randomUUID(),
+      bytes: await file.arrayBuffer(),
       contentType: type,
-      alt: `${parsed.draft.title} photo`,
+      ext,
     });
   }
+
+  const existing = await listStoredRecipes(bucket);
+  const slugs = new Set(existing.map((recipe) => recipe.slug));
+  const slug = uniqueSlug(slugify(parsed.draft.title), slugs);
+  const now = new Date().toISOString();
+  const photos: RecipePhoto[] = pendingPhotos.map((photo) => ({
+    id: photo.id,
+    contentType: photo.contentType,
+    alt: `${parsed.draft.title} photo`,
+  }));
 
   const recipe: Recipe = {
     ...parsed.draft,
@@ -77,6 +90,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     createdAt: now,
     updatedAt: now,
   };
+
+  const incomingBytes =
+    pendingPhotos.reduce((total, photo) => total + photo.bytes.byteLength, 0) +
+    encodedJsonSize(recipe);
+  const blocked = await rejectIfOverStorageCap(
+    bucket,
+    incomingBytes,
+    maxBucketBytes(env),
+  );
+  if (blocked) return blocked;
+
+  for (const photo of pendingPhotos) {
+    await putPhoto(bucket, photo.id, photo.bytes, photo.contentType, photo.ext);
+  }
   await putStoredRecipe(bucket, recipe);
   return json({ recipe }, 201);
 };

@@ -26,7 +26,7 @@ interface R2ListOptions {
 }
 
 interface R2Objects {
-  objects: Array<{ key: string }>;
+  objects: Array<{ key: string; size: number }>;
   truncated: boolean;
   cursor?: string;
 }
@@ -45,6 +45,8 @@ interface R2Bucket {
 interface Env {
   BOOKSHELF_PASSWORD?: string;
   SESSION_SECRET?: string;
+  /** Optional override for the R2 storage ceiling, in bytes (positive integer). */
+  MAX_BUCKET_BYTES?: string;
   RECIPES?: R2Bucket;
   ASSETS: { fetch: (request: Request | URL | string) => Promise<Response> };
 }

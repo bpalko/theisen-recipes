@@ -66,7 +66,12 @@ export function AddRecipe() {
       });
       const body = (await response.json()) as { recipe?: Recipe; error?: string };
       if (!response.ok || !body.recipe) {
-        setError(body.error ?? "Could not save that recipe.");
+        setError(
+          body.error ??
+            (response.status === 507
+              ? "The recipe bookshelf is out of storage space."
+              : "Could not save that recipe."),
+        );
         setBusy(false);
         return;
       }

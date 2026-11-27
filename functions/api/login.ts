@@ -4,7 +4,7 @@ import {
   secretsEqual,
   sessionCookieHeader,
 } from "../../shared/session.ts";
-import { loginPageHtml } from "../login-page.ts";
+import { LOGIN_PAGE_HEADERS, loginPageHtml } from "../login-page.ts";
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!env.BOOKSHELF_PASSWORD || !env.SESSION_SECRET) {
@@ -57,7 +57,7 @@ function fail(request: Request, message: string, nextPath: string): Response {
   }
   return new Response(loginPageHtml({ error: message, nextPath }), {
     status: 401,
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+    headers: LOGIN_PAGE_HEADERS,
   });
 }
 

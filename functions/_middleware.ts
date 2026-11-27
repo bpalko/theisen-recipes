@@ -1,4 +1,4 @@
-import { loginPageHtml } from "./login-page.ts";
+import { LOGIN_PAGE_HEADERS, loginPageHtml } from "./login-page.ts";
 import {
   parseCookies,
   readValidSession,
@@ -69,9 +69,6 @@ function isDocumentPath(pathname: string): boolean {
 function html(body: string): Response {
   return new Response(body, {
     status: 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-    },
+    headers: LOGIN_PAGE_HEADERS,
   });
 }

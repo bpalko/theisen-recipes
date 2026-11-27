@@ -4,6 +4,60 @@ import { isBookId } from "../../shared/recipes.ts";
 const RECIPE_PREFIX = "recipes/";
 const PHOTO_PREFIX = "photos/";
 
+/** 5 GiB — well below Cloudflare R2's 10 GB free tier. */
+export const DEFAULT_MAX_BUCKET_BYTES = 5 * 1024 * 1024 * 1024;
+const LIST_PAGE_SIZE = 1000;
+
+export function maxBucketBytes(env: Pick<Env, "MAX_BUCKET_BYTES">): number {
+  const raw = env.MAX_BUCKET_BYTES?.trim() ?? "";
+  if (!/^[0-9]+$/.test(raw)) return DEFAULT_MAX_BUCKET_BYTES;
+  const parsed = Number(raw);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) return DEFAULT_MAX_BUCKET_BYTES;
+  return parsed;
+}
+
+export async function sumBucketBytes(bucket: R2Bucket): Promise<number> {
+  let total = 0;
+  let cursor: string | undefined;
+  do {
+    const page = await bucket.list({ cursor, limit: LIST_PAGE_SIZE });
+    for (const object of page.objects) {
+      total += object.size;
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  return total;
+}
+
+export function storageCapError(cap: number): string {
+  return `Not enough storage to save this recipe. The bookshelf is capped at ${formatBytes(cap)} to stay below Cloudflare R2's 10 GB free tier. Remove some recipes or photos and try again.`;
+}
+
+export function formatBytes(bytes: number): string {
+  const gib = 1024 * 1024 * 1024;
+  if (bytes >= gib && bytes % gib === 0) return `${bytes / gib} GB`;
+  const mib = 1024 * 1024;
+  if (bytes >= mib && bytes % mib === 0) return `${bytes / mib} MB`;
+  if (bytes >= mib) return `${(bytes / mib).toFixed(1)} MB`;
+  return `${bytes} bytes`;
+}
+
+export async function rejectIfOverStorageCap(
+  bucket: R2Bucket,
+  additionalBytes: number,
+  cap: number,
+): Promise<Response | null> {
+  const used = await sumBucketBytes(bucket);
+  if (used + additionalBytes > cap) {
+    return json({ error: storageCapError(cap) }, 507);
+  }
+  return null;
+}
+
+export function encodedJsonSize(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value, null, 2)).byteLength;
+}
+
 export function recipeKey(slug: string): string {
   return `${RECIPE_PREFIX}${slug}.json`;
 }
