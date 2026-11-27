@@ -3,7 +3,7 @@ export type BookId =
   | "appetizers"
   | "mains"
   | "soups"
-  | "sides"
+  | "miscellaneous"
   | "holidays";
 
 export type BookDefinition = {
@@ -23,6 +23,7 @@ export type BookDefinition = {
 /** Legacy R2 / URL slugs that should resolve to a current book. */
 const LEGACY_BOOK_IDS: Record<string, BookId> = {
   desserts: "baking",
+  sides: "miscellaneous",
 };
 
 export const BOOKS: BookDefinition[] = [
@@ -79,16 +80,16 @@ export const BOOKS: BookDefinition[] = [
     pattern: "dots",
   },
   {
-    id: "sides",
+    id: "miscellaneous",
     number: "05",
-    title: "Sides & Salads",
-    spineTitle: "Sides & Salads",
-    coverKicker: "Pass to the left",
-    description: "Potluck salads, roasted potatoes, and the dish that disappears first.",
+    title: "Miscellaneous",
+    spineTitle: "Miscellaneous",
+    coverKicker: "Everything else",
+    description: "Seasoning mixes, pantry bottles, and the recipes that don’t live in another book.",
     color: "#D4A017",
     ink: "#1a1404",
     accent: "#8A6808",
-    filterLabel: "Sides",
+    filterLabel: "Miscellaneous",
     pattern: "bands",
   },
   {

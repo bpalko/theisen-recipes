@@ -48,9 +48,12 @@ describe("recipe indexing", () => {
 
   it("maps the retired Desserts book onto Baking", () => {
     expect(normalizeBookId("desserts")).toBe("baking");
+    expect(normalizeBookId("sides")).toBe("miscellaneous");
     expect(normalizeBookId("appetizers")).toBe("appetizers");
     expect(BOOKS.some((book) => book.id === "desserts")).toBe(false);
+    expect(BOOKS.some((book) => book.id === "sides")).toBe(false);
     expect(BOOKS.some((book) => book.id === "appetizers")).toBe(true);
+    expect(BOOKS.some((book) => book.id === "miscellaneous")).toBe(true);
     const mapped = recipeFromMarkdown(
       "pizzelles.md",
       [
