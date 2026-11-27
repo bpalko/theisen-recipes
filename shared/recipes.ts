@@ -141,7 +141,10 @@ export function mergeRecipes(seed: Recipe[], stored: Recipe[]): Recipe[] {
   return sortRecipesByTitle([...bySlug.values()]);
 }
 
-export function validateDraft(input: Partial<RecipeDraft>): {
+export function validateDraft(
+  input: Partial<RecipeDraft>,
+  options: { photoCount?: number } = {},
+): {
   ok: true;
   draft: RecipeDraft;
 } | { ok: false; error: string } {
@@ -155,8 +158,13 @@ export function validateDraft(input: Partial<RecipeDraft>): {
   const tags = (input.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
   const ingredients = (input.ingredients ?? []).map((item) => item.trim()).filter(Boolean);
   const steps = (input.steps ?? []).map((item) => item.trim()).filter(Boolean);
+  const photoCount = options.photoCount ?? 0;
 
   if (title.length < 2) return { ok: false, error: "Add a recipe title." };
+  const hasText = ingredients.length > 0 || steps.length > 0;
+  if (!hasText && photoCount < 1) {
+    return { ok: false, error: "Add a photo or the recipe text (ingredients or steps)." };
+  }
   const book = category && isBookId(category) ? category : DEFAULT_BOOK_ID;
 
   return {

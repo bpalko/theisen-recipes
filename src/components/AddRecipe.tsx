@@ -6,6 +6,7 @@ import {
   ALLOWED_PHOTO_TYPES,
   PHOTO_MAX_BYTES,
   PHOTO_MAX_COUNT,
+  validateDraft,
   type Recipe,
 } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
@@ -58,6 +59,36 @@ export function AddRecipe() {
     const data = new FormData(form);
     for (const photo of photos) data.append("photos", photo.file);
 
+    const parsed = validateDraft(
+      {
+        title: String(data.get("title") ?? ""),
+        category: String(data.get("category") ?? "") as Recipe["category"],
+        contributor: String(data.get("contributor") ?? ""),
+        prepTime: String(data.get("prepTime") ?? ""),
+        cookTime: String(data.get("cookTime") ?? ""),
+        servings: String(data.get("servings") ?? ""),
+        notes: String(data.get("notes") ?? ""),
+        tags: String(data.get("tags") ?? "")
+          .split(/[\n,]/)
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        ingredients: String(data.get("ingredients") ?? "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+        steps: String(data.get("steps") ?? "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+      },
+      { photoCount: photos.length },
+    );
+    if (!parsed.ok) {
+      setError(parsed.error);
+      setBusy(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/recipes", {
         method: "POST",
@@ -83,7 +114,7 @@ export function AddRecipe() {
       <p className="eyebrow">New card for the shelf</p>
       <h1>Add a family recipe</h1>
       <p className="lede">
-        Only a title is required. Add the book, times, ingredients, steps, and photos whenever you have them.
+        A title is required, plus a photo or the recipe text (ingredients or steps). Everything else is optional.
       </p>
 
       {error ? (
@@ -144,7 +175,10 @@ export function AddRecipe() {
 
         <fieldset className="photo-field">
           <legend>Pictures</legend>
-          <p>Optional. JPEG, PNG, WebP, or GIF. Up to {PHOTO_MAX_COUNT} photos, 8 MB each.</p>
+          <p>
+            Needed if you skip ingredients and steps. JPEG, PNG, WebP, or GIF. Up to {PHOTO_MAX_COUNT}{" "}
+            photos, 8 MB each.
+          </p>
           <input
             type="file"
             accept={ALLOWED_PHOTO_TYPES.join(",")}
