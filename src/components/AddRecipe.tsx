@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { BOOKS } from "../../shared/books.ts";
+import { BOOKS, DEFAULT_BOOK_ID } from "../../shared/books.ts";
 import {
   ALLOWED_PHOTO_TYPES,
   PHOTO_MAX_BYTES,
@@ -83,7 +83,7 @@ export function AddRecipe() {
       <p className="eyebrow">New card for the shelf</p>
       <h1>Add a family recipe</h1>
       <p className="lede">
-        Photos live in the Cloudflare R2 bucket. The recipe is saved next to them so it survives deploys.
+        Only a title is required. Add the book, times, ingredients, steps, and photos whenever you have them.
       </p>
 
       {error ? (
@@ -95,11 +95,11 @@ export function AddRecipe() {
       <form className="recipe-form" onSubmit={onSubmit}>
         <label>
           Title *
-          <input name="title" required placeholder="Grandma’s rye bread" />
+          <input name="title" required minLength={2} placeholder="Grandma’s rye bread" autoComplete="off" />
         </label>
         <label>
-          Book / category *
-          <select name="category" required defaultValue="baking">
+          Book / category
+          <select name="category" defaultValue={DEFAULT_BOOK_ID}>
             {BOOKS.map((book) => (
               <option key={book.id} value={book.id}>
                 {book.number} {book.title}
@@ -108,21 +108,21 @@ export function AddRecipe() {
           </select>
         </label>
         <label>
-          Contributed by *
-          <input name="contributor" required placeholder="Aunt Carol" />
+          Contributed by
+          <input name="contributor" placeholder="Aunt Carol" />
         </label>
         <div className="form-row">
           <label>
-            Prep time *
-            <input name="prepTime" required placeholder="20 min" />
+            Prep time
+            <input name="prepTime" placeholder="20 min" />
           </label>
           <label>
-            Cook time *
-            <input name="cookTime" required placeholder="40 min" />
+            Cook time
+            <input name="cookTime" placeholder="40 min" />
           </label>
           <label>
-            Servings *
-            <input name="servings" required placeholder="6" />
+            Servings
+            <input name="servings" placeholder="6" />
           </label>
         </div>
         <label>
@@ -130,12 +130,12 @@ export function AddRecipe() {
           <input name="tags" placeholder="one per line or comma-separated" />
         </label>
         <label>
-          Ingredients *
-          <textarea name="ingredients" required rows={8} placeholder={"1 cup milk\n2 eggs"} />
+          Ingredients
+          <textarea name="ingredients" rows={6} placeholder={"1 cup milk\n2 eggs"} />
         </label>
         <label>
-          Steps *
-          <textarea name="steps" required rows={8} placeholder={"Warm the milk.\nStir in the eggs."} />
+          Steps
+          <textarea name="steps" rows={6} placeholder={"Warm the milk.\nStir in the eggs."} />
         </label>
         <label>
           Family notes

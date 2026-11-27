@@ -41,7 +41,7 @@ export function AzIndex() {
                   <li key={recipe.slug}>
                     <Link to={`/recipe/${recipe.slug}`}>{recipe.title}</Link>
                     <span>
-                      {book?.title} · {recipe.contributor}
+                      {[book?.title, recipe.contributor].filter(Boolean).join(" · ")}
                     </span>
                   </li>
                 );

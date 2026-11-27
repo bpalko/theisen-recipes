@@ -99,6 +99,18 @@ describe("add-recipe validation", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts a title-only draft and defaults the book", () => {
+    const result = validateDraft({ title: "Rye Bread" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.draft.title).toBe("Rye Bread");
+      expect(result.draft.category).toBe("baking");
+      expect(result.draft.contributor).toBe("");
+      expect(result.draft.ingredients).toEqual([]);
+      expect(result.draft.steps).toEqual([]);
+    }
+  });
+
   it("slugifies titles and avoids collisions", () => {
     expect(slugify("Grandma Theisen's Cinnamon Rolls")).toBe(
       "grandma-theisens-cinnamon-rolls",

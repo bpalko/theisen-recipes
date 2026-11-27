@@ -43,7 +43,10 @@ export function Header() {
           Add recipe
         </NavLink>
         <NavLink className="text-link" to="/index">
-          A–Z Index <span aria-hidden="true">↗</span>
+          <span className="nav-full">
+            A–Z Index <span aria-hidden="true">↗</span>
+          </span>
+          <span className="nav-short">Index</span>
         </NavLink>
         <a className="icon-btn" href="/cdn-cgi/access/logout" title="Sign out">
           Sign out

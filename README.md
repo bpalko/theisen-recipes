@@ -45,8 +45,8 @@ pnpm check    # tests + typecheck + production build
 
 1. Open the bookshelf (in production, Cloudflare Access emails a one-time PIN).
 2. Click **Add recipe**.
-3. Fill in title, book, contributor, times, ingredients, and steps.
-4. Attach pictures (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
+3. Give it a **title** (the only required field). Book, contributor, times, ingredients, steps, and photos are optional.
+4. Attach pictures if you have them (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
 5. Save. The recipe JSON and photos go to the **R2 bucket**; they survive deploys.
 
 ### Seed / sample markdown

@@ -101,6 +101,8 @@ export const BOOKS: BookDefinition[] = [
   },
 ];
 
+export const DEFAULT_BOOK_ID: BookId = "baking";
+
 export const FILTER_PILLS: { id: "all" | BookId; label: string }[] = [
   { id: "all", label: "All" },
   ...BOOKS.map((book) => ({ id: book.id, label: book.filterLabel })),

@@ -1,4 +1,4 @@
-import { BOOKS, type BookId } from "./books.ts";
+import { BOOKS, DEFAULT_BOOK_ID, type BookId } from "./books.ts";
 import {
   extractSectionList,
   parseFrontmatter,
@@ -164,21 +164,13 @@ export function validateDraft(input: Partial<RecipeDraft>): {
   const steps = (input.steps ?? []).map((item) => item.trim()).filter(Boolean);
 
   if (title.length < 2) return { ok: false, error: "Add a recipe title." };
-  if (!category || !isBookId(category)) {
-    return { ok: false, error: "Pick a book / category." };
-  }
-  if (!contributor) return { ok: false, error: "Who is this recipe from?" };
-  if (!prepTime || !cookTime || !servings) {
-    return { ok: false, error: "Fill in prep time, cook time, and servings." };
-  }
-  if (ingredients.length === 0) return { ok: false, error: "Add at least one ingredient." };
-  if (steps.length === 0) return { ok: false, error: "Add at least one step." };
+  const book = category && isBookId(category) ? category : DEFAULT_BOOK_ID;
 
   return {
     ok: true,
     draft: {
       title,
-      category,
+      category: book,
       contributor,
       prepTime,
       cookTime,
