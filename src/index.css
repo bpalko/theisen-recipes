@@ -329,12 +329,19 @@ p { margin: 0; }
   text-align: left;
   position: relative;
   overflow: hidden;
+  container-type: inline-size;
 }
 .cover-art h2 {
   font-size: 34px;
   line-height: 0.95;
   margin: 8px 0 12px;
   max-width: 10ch;
+}
+.cover-art h2.is-one-word {
+  max-width: 100%;
+  font-size: min(32px, 15cqi);
+  letter-spacing: -0.07em;
+  white-space: nowrap;
 }
 .cover-num {
   width: 42px;
