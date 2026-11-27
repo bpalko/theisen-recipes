@@ -1,13 +1,32 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+
+type SearchQueryValue = {
+  query: string;
+  setQuery: (value: string) => void;
+};
+
+const SearchQueryContext = createContext<SearchQueryValue | null>(null);
+
+export function SearchQueryProvider({ children }: { children: ReactNode }) {
+  const [query, setQuery] = useState("");
+  const value = useMemo(() => ({ query, setQuery }), [query]);
+  return <SearchQueryContext.Provider value={value}>{children}</SearchQueryContext.Provider>;
+}
+
+export function useSearchQuery(): SearchQueryValue {
+  const ctx = useContext(SearchQueryContext);
+  if (!ctx) throw new Error("useSearchQuery must be used within SearchQueryProvider");
+  return ctx;
+}
 
 export function SearchDock() {
   const location = useLocation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const onIndex = location.pathname === "/index";
-  const [query, setQuery] = useState(() => (onIndex ? (params.get("q") ?? "") : ""));
+  const { query, setQuery } = useSearchQuery();
 
   useEffect(() => {
     if (location.pathname !== "/index") {
@@ -16,7 +35,7 @@ export function SearchDock() {
     }
     if (document.activeElement === inputRef.current) return;
     setQuery(params.get("q") ?? "");
-  }, [location.pathname, params]);
+  }, [location.pathname, params, setQuery]);
 
   function openIndex(nextQuery = query) {
     const search = nextQuery.trim() ? `?q=${encodeURIComponent(nextQuery)}` : "";

@@ -50,12 +50,12 @@ describe("recipe indexing", () => {
     expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" })));
   });
 
-  it("searches title, contributor, tags, and ingredients", () => {
-    expect(searchRecipes(recipes, "cinnamon").map((recipe) => recipe.slug)).toContain(
-      "grandma-theisen-cinnamon-rolls",
-    );
-    expect(searchRecipes(recipes, "Uncle Jim").length).toBeGreaterThan(0);
-    expect(searchRecipes(recipes, "paprika").length).toBeGreaterThan(0);
+  it("narrows by title prefix so a single letter drops other groups", () => {
+    const el = searchRecipes(recipes, "L");
+    expect(el.map((recipe) => recipe.slug)).toEqual(["lemon-bars"]);
+    expect(groupRecipesByLetter(el).map((group) => group.letter)).toEqual(["L"]);
+    expect(searchRecipes(recipes, "Lemon B").map((recipe) => recipe.slug)).toEqual(["lemon-bars"]);
+    expect(searchRecipes(recipes, "paprika")).toEqual([]);
     expect(searchRecipes(recipes, "zzzz-nope")).toEqual([]);
   });
 

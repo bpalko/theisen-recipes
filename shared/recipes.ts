@@ -96,28 +96,21 @@ export function recipesForBook(recipes: Recipe[], bookId: BookId): Recipe[] {
   return sortRecipesByTitle(recipes.filter((recipe) => recipe.category === bookId));
 }
 
-export function searchRecipes(recipes: Recipe[], query: string): Recipe[] {
-  const terms = query
+function compactSearchText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .split(/\s+/)
-    .map((term) => term.trim())
-    .filter(Boolean);
-  if (terms.length === 0) return sortRecipesByTitle(recipes);
+    .replaceAll(/[^a-z0-9]+/g, "");
+}
+
+/** Match titles from the start so "L" keeps only the L group, not every recipe with an "l" in the ingredients. */
+export function searchRecipes(recipes: Recipe[], query: string): Recipe[] {
+  const needle = compactSearchText(query);
+  if (!needle) return sortRecipesByTitle(recipes);
 
   return sortRecipesByTitle(
-    recipes.filter((recipe) => {
-      const haystack = [
-        recipe.title,
-        recipe.category,
-        recipe.contributor,
-        recipe.notes,
-        ...recipe.tags,
-        ...recipe.ingredients,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return terms.every((term) => haystack.includes(term));
-    }),
+    recipes.filter((recipe) => compactSearchText(recipe.title).startsWith(needle)),
   );
 }
 

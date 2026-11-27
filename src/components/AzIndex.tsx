@@ -1,13 +1,13 @@
 import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { getBook } from "../../shared/books.ts";
 import { groupRecipesByLetter, searchRecipes } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
+import { useSearchQuery } from "./SearchDock.tsx";
 
 export function AzIndex() {
   const { recipes } = useRecipes();
-  const [params] = useSearchParams();
-  const query = params.get("q") ?? "";
+  const { query } = useSearchQuery();
   const filtered = useMemo(() => searchRecipes(recipes, query), [recipes, query]);
   const groups = useMemo(() => groupRecipesByLetter(filtered), [filtered]);
 
