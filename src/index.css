@@ -577,13 +577,22 @@ p { margin: 0; }
   border-top: 1px solid var(--line);
 }
 .family-notes p { line-height: 1.6; }
-.recipe-hero { margin: 0 0 28px; }
-.recipe-hero img {
-  width: 100%;
-  max-height: 420px;
-  object-fit: cover;
-  border-radius: 8px;
+.recipe-hero {
+  margin: 0 0 28px;
+  display: grid;
+  place-items: center;
   background: #f3f3f3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.recipe-hero img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(70dvh, 820px);
+  object-fit: contain;
+  object-position: center;
 }
 .thumbs { display: flex; gap: 8px; margin-top: 10px; }
 .thumbs button {
@@ -887,6 +896,9 @@ p { margin: 0; }
     width: 100%;
   }
   .checklist label { min-height: 44px; align-items: center; }
+  .recipe-hero img {
+    max-height: min(62dvh, calc(100dvh - 12rem));
+  }
   .thumbs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
