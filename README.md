@@ -1,6 +1,6 @@
 # Theisen Recipes
 
-A password-gated family recipe bookshelf. Books sit on a 3D shelf by category; the A–Z index and live search find anything; family members can add recipes and photos.
+A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the A–Z index and live search find anything; family members can add recipes and photos.
 
 The 15 recipes in `src/content/recipes/` are **sample starters**. Swap them for real Theisen recipes, or leave them and add the real ones through the **Add recipe** screen (those persist in R2, not git).
 
@@ -10,8 +10,10 @@ The 15 recipes in `src/content/recipes/` are **sample starters**. Swap them for 
 
 ```bash
 pnpm install
-cp .env.example .dev.vars   # then edit the password and session secret
+cp .env.example .dev.vars
 ```
+
+`.dev.vars` does not need Access secrets for local work. Origin JWT checks stay off until you set `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD`.
 
 ### UI only (Vite)
 
@@ -19,7 +21,7 @@ cp .env.example .dev.vars   # then edit the password and session secret
 pnpm dev
 ```
 
-Fast HMR for layout work. There is **no password gate** and **no R2**, so Add recipe cannot save.
+Fast HMR for layout work. There is **no Cloudflare Access gate** and **no R2**, so Add recipe cannot save.
 
 ### Full app (Cloudflare Pages + Functions + local R2)
 
@@ -29,7 +31,7 @@ pnpm pages
 
 This builds the site and runs `wrangler pages dev`. Open the URL Wrangler prints (usually `http://127.0.0.1:8788`).
 
-- Password gate: value of `BOOKSHELF_PASSWORD` in `.dev.vars`
+- Auth: none locally unless both Access vars are set in `.dev.vars` (then every request needs a valid `Cf-Access-Jwt-Assertion` header or `CF_Authorization` cookie)
 - Family recipes and photos: local R2 simulation of the `RECIPES` binding (persisted under `.wrangler/`)
 
 ```bash
@@ -41,7 +43,7 @@ pnpm check    # tests + typecheck + production build
 
 ### Real family recipes (recommended)
 
-1. Sign in to the bookshelf.
+1. Open the bookshelf (in production, Cloudflare Access emails a one-time PIN).
 2. Click **Add recipe**.
 3. Fill in title, book, contributor, times, ingredients, and steps.
 4. Attach pictures (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
@@ -84,14 +86,20 @@ notes: The spottier the bananas, the better.
 
 2. Create a Pages project from this repo (build command `pnpm run build`, output `dist`, root `/`). Wrangler config already sets `pages_build_output_dir` and the `RECIPES` R2 binding.
 
-3. In **Settings → Environment variables**, add production secrets:
+3. Put Cloudflare Access in front of the custom domain (`recipes.palko.dev`) as a **self-hosted application** with **email one-time PIN** (or another Access policy). Visitors sign in once at Cloudflare Access; there is no in-app password screen. **Sign out** in the header sends them to `/cdn-cgi/access/logout`.
 
-   - `BOOKSHELF_PASSWORD` — the family password
-   - `SESSION_SECRET` — a long random string (HMAC key for the session cookie)
+4. Optional, for defense-in-depth JWT checks at the origin (Pages Functions). In **Settings → Environment variables**:
 
-4. Confirm **Settings → Bindings** includes R2 `RECIPES` → `theisen-recipes`. Redeploy after adding the binding if you set it in the dashboard instead of `wrangler.jsonc`.
+   - `CF_ACCESS_TEAM_DOMAIN` — Cloudflare One team domain, e.g. `your-team.cloudflareaccess.com`
+   - `CF_ACCESS_AUD` — Application Audience (AUD) tag from **Zero Trust → Access → Applications**
 
-The password is never stored in git. Sessions are HMAC-signed `HttpOnly` cookies, verified in `functions/_middleware.ts`. Unauthenticated visitors only see the login page; recipe JSON, photos, and the JS bundle stay behind the gate.
+   When both are set, `_middleware.ts` verifies `Cf-Access-Jwt-Assertion` (or the `CF_Authorization` cookie) against the team JWKS (`https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`): RS256 signature, `aud`, `iss`, and `exp`. Missing or invalid tokens return **401**. When either var is unset (local `wrangler pages dev`, or before these are added in the dashboard), requests pass through and SPA document fallback still works.
+
+   You can remove the old `BOOKSHELF_PASSWORD` and `SESSION_SECRET` secrets if they are still on the project.
+
+5. Confirm **Settings → Bindings** includes R2 `RECIPES` → `theisen-recipes`. Redeploy after adding the binding if you set it in the dashboard instead of `wrangler.jsonc`.
+
+Access, not this repo, holds the family email list. Recipe JSON, photos, and the JS bundle stay behind Access at the edge.
 
 ## Architecture
 
@@ -100,5 +108,5 @@ The password is never stored in git. Sessions are HMAC-signed `HttpOnly` cookies
 | Seed recipes | `src/content/recipes/*.md` (bundled at build) |
 | Family recipes | R2 `recipes/{slug}.json` |
 | Photos | R2 `photos/{id}.{ext}`, served at `/api/photos/:id` |
-| Auth | Pages Functions + `BOOKSHELF_PASSWORD` / `SESSION_SECRET` |
+| Auth | Cloudflare Access (email OTP) + optional origin JWT verification |
 | UI | Vite + React, Cloudflare Pages static output |

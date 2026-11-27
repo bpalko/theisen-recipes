@@ -43,8 +43,17 @@ interface R2Bucket {
 }
 
 interface Env {
-  BOOKSHELF_PASSWORD?: string;
-  SESSION_SECRET?: string;
+  /**
+   * Cloudflare One team domain used to build the Access JWKS URL and `iss`
+   * check, e.g. `palko.cloudflareaccess.com`. Optional: when unset (with
+   * `CF_ACCESS_AUD`), Pages Functions pass requests through.
+   */
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  /**
+   * Access Application Audience (AUD) tag. Optional: when unset (with
+   * `CF_ACCESS_TEAM_DOMAIN`), Pages Functions pass requests through.
+   */
+  CF_ACCESS_AUD?: string;
   RECIPES?: R2Bucket;
   ASSETS: { fetch: (request: Request | URL | string) => Promise<Response> };
 }

@@ -13,7 +13,7 @@ dist-ssr
 *.local
 .wrangler
 
-# Secrets — never commit real passwords
+# Secrets — never commit real values
 .dev.vars
 .env
 .env.*
