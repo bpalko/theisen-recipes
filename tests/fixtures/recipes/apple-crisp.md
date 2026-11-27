@@ -1,6 +1,6 @@
 ---
 title: Apple Crisp with Oat Topping
-category: desserts
+category: baking
 contributor: Grandma Theisen
 prepTime: 20 min
 cookTime: 45 min

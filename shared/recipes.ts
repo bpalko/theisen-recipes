@@ -1,4 +1,4 @@
-import { BOOKS, DEFAULT_BOOK_ID, type BookId } from "./books.ts";
+import { BOOKS, DEFAULT_BOOK_ID, normalizeBookId, type BookId } from "./books.ts";
 import {
   extractSectionList,
   parseFrontmatter,
@@ -50,7 +50,8 @@ export function isBookId(value: string): value is BookId {
 
 export function recipeFromMarkdown(filePath: string, raw: string): Recipe {
   const { data, body } = parseFrontmatter(raw);
-  if (!isBookId(data.category)) {
+  const category = normalizeBookId(data.category);
+  if (!category) {
     throw new Error(`${filePath}: unknown category "${data.category}"`);
   }
   const ingredients = extractSectionList(body, "Ingredients");
@@ -64,7 +65,7 @@ export function recipeFromMarkdown(filePath: string, raw: string): Recipe {
   return {
     slug: slugFromPath(filePath),
     title: data.title,
-    category: data.category,
+    category,
     contributor: data.contributor,
     prepTime: data.prepTime,
     cookTime: data.cookTime,
@@ -165,7 +166,7 @@ export function validateDraft(
   if (!hasText && photoCount < 1) {
     return { ok: false, error: "Add a photo or the recipe text (ingredients or steps)." };
   }
-  const book = category && isBookId(category) ? category : DEFAULT_BOOK_ID;
+  const book = normalizeBookId(category) ?? DEFAULT_BOOK_ID;
 
   return {
     ok: true,

@@ -185,7 +185,7 @@ p { margin: 0; }
   flex-direction: column;
   justify-content: center;
   padding: 12px 0 24px;
-  overflow: hidden;
+  overflow: visible;
 }
 .shelf-stage {
   position: relative;
@@ -199,6 +199,7 @@ p { margin: 0; }
   perspective: 1800px;
   padding: 40px max(24px, calc(50% - var(--cover-w) / 2)) 56px;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
@@ -842,6 +843,40 @@ p { margin: 0; }
     line-clamp: 2;
     overflow: hidden;
   }
+  .shelf-page {
+    overflow: visible;
+    justify-content: flex-start;
+    padding: 4px 0 8px;
+  }
+  .shelf-stage {
+    min-height: 0;
+    overflow: visible;
+  }
+  .shelf-row {
+    scroll-snap-type: none;
+    padding: 28px max(28px, calc(50% - var(--cover-w) / 2)) 48px;
+  }
+  .book-slot {
+    transition: none;
+    overflow: hidden;
+  }
+  .book-slot.is-focused {
+    overflow: visible;
+  }
+  .book-3d {
+    transition: none;
+  }
+  .book-slot.is-focused .book-3d {
+    transform: rotateY(0deg);
+  }
+  .book-cover {
+    transform: none;
+    box-shadow: 4px 10px 18px rgba(0, 0, 0, 0.16);
+  }
+  .shelf-controls {
+    padding: 0 12px;
+    gap: 12px;
+  }
   .split-page, .recipe-grid, .form-row, .toc-grid {
     grid-template-columns: 1fr;
   }
@@ -853,16 +888,11 @@ p { margin: 0; }
   }
   .toc-cover { display: none; }
   .book-slot.is-focused { cursor: pointer; }
-  .shelf-stage { min-height: 360px; }
-  .shelf-row {
-    padding: 28px max(16px, calc(50% - var(--cover-w) / 2)) 40px;
-  }
   .round-btn {
     width: 48px;
     height: 48px;
   }
   .open-cursor { display: none; }
-  .shelf-page { padding: 8px 0 16px; }
   .index-head, .recipe-toolbar { flex-direction: column; align-items: stretch; }
   .recipe-page, .index-page, .form-page {
     padding: 8px 16px 32px;
@@ -903,9 +933,15 @@ p { margin: 0; }
 }
 
 @media (max-width: 480px) {
+  :root {
+    --spine: 36px;
+    --cover-w: min(188px, calc(100vw - 112px));
+    --cover-h: calc(var(--cover-w) * 1.5);
+  }
   .cover-art { padding: 16px 16px 14px; }
   .cover-art h2 { font-size: 28px; }
   .header-actions { gap: 8px; }
+  .shelf-caption { min-width: 0; flex: 1; }
 }
 
 @media (hover: none) {

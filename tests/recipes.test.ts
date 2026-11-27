@@ -2,11 +2,12 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { BOOKS } from "../shared/books.ts";
+import { BOOKS, normalizeBookId } from "../shared/books.ts";
 import {
   groupRecipesByLetter,
   loadRecipesFromFiles,
   mergeRecipes,
+  recipeFromMarkdown,
   recipesForBook,
   searchRecipes,
   sortRecipesByTitle,
@@ -43,6 +44,38 @@ describe("recipe indexing", () => {
     for (const book of BOOKS) {
       expect(recipesForBook(recipes, book.id).length).toBeGreaterThan(0);
     }
+  });
+
+  it("maps the retired Desserts book onto Baking", () => {
+    expect(normalizeBookId("desserts")).toBe("baking");
+    expect(normalizeBookId("appetizers")).toBe("appetizers");
+    expect(BOOKS.some((book) => book.id === "desserts")).toBe(false);
+    expect(BOOKS.some((book) => book.id === "appetizers")).toBe(true);
+    const mapped = recipeFromMarkdown(
+      "pizzelles.md",
+      [
+        "---",
+        "title: Pizzelles",
+        "category: desserts",
+        "contributor: Grandma",
+        "prepTime: 20 min",
+        "cookTime: 20 min",
+        "servings: \"24\"",
+        "tags: [cookie]",
+        "notes: Legacy category",
+        "---",
+        "",
+        "## Ingredients",
+        "",
+        "- 3 eggs",
+        "",
+        "## Steps",
+        "",
+        "1. Bake on the iron.",
+        "",
+      ].join("\n"),
+    );
+    expect(mapped.category).toBe("baking");
   });
 
   it("sorts alphabetically by title", () => {
@@ -122,6 +155,16 @@ describe("add-recipe validation", () => {
   it("accepts a title with steps and no ingredients", () => {
     const result = validateDraft({ title: "Rye Bread", steps: ["Mix and bake."] });
     expect(result.ok).toBe(true);
+  });
+
+  it("maps a Desserts draft onto Baking", () => {
+    const result = validateDraft({
+      title: "Pizzelles",
+      category: "desserts" as never,
+      ingredients: ["3 eggs"],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.draft.category).toBe("baking");
   });
 
   it("accepts a title with a photo and no recipe text", () => {

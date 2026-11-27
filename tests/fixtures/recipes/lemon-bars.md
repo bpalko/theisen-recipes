@@ -1,6 +1,6 @@
 ---
 title: Lemon Bars
-category: desserts
+category: baking
 contributor: Aunt Carol
 prepTime: 20 min
 cookTime: 40 min
