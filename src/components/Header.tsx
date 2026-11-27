@@ -39,14 +39,8 @@ export function Header() {
       </nav>
 
       <div className="header-actions">
-        <NavLink className="text-link" to="/add">
+        <NavLink className="add-btn" to="/add">
           Add recipe
-        </NavLink>
-        <NavLink className="text-link" to="/index">
-          <span className="nav-full">
-            A–Z Index <span aria-hidden="true">↗</span>
-          </span>
-          <span className="nav-short">Index</span>
         </NavLink>
         <a className="icon-btn" href="/cdn-cgi/access/logout" title="Sign out">
           Sign out

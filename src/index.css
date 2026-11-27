@@ -27,14 +27,26 @@ body {
   overflow-x: hidden;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
-button, a, .pill, .icon-btn, .round-btn, .submit-btn {
+button, a, .pill, .icon-btn, .add-btn, .round-btn, .submit-btn {
   touch-action: manipulation;
 }
 a { color: inherit; }
 h1, h2, h3 { margin: 0; letter-spacing: -0.04em; }
 p { margin: 0; }
 
-.app-shell { min-height: 100vh; }
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.app-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 .sr-only {
   position: absolute;
@@ -60,7 +72,6 @@ p { margin: 0; }
   z-index: 30;
   background: var(--bg);
 }
-.nav-short { display: none; }
 .brand {
   font-weight: 800;
   font-size: 18px;
@@ -101,15 +112,25 @@ p { margin: 0; }
   gap: 16px;
   flex-shrink: 0;
 }
-.text-link {
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 16px;
   font-size: 14px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+  font-weight: 700;
+  text-decoration: none;
   white-space: nowrap;
+  min-height: 40px;
+  letter-spacing: -0.01em;
 }
-.text-link.active { font-weight: 800; }
+.add-btn:hover { background: #000; color: #fff; }
+.add-btn.active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #111;
+}
 .icon-btn {
   border: 1px solid var(--line);
   background: #fff;
@@ -542,6 +563,32 @@ p { margin: 0; }
 .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .index-page h1 { font-size: 48px; margin: 6px 0 0; }
+.search-dock {
+  flex-shrink: 0;
+  padding: 10px 20px max(16px, env(safe-area-inset-bottom));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.search-dock-field { display: block; }
+.search-dock input {
+  width: 100%;
+  max-width: 720px;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #111;
+  border-radius: 999px;
+  padding: 14px 18px;
+  background: #fff;
+  font-size: 16px;
+  appearance: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.search-dock input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.15), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
 .search input, .recipe-form input, .recipe-form select, .recipe-form textarea {
   width: 100%;
   border: 1px solid #111;
@@ -675,15 +722,9 @@ p { margin: 0; }
     padding: 10px 14px;
     min-height: 40px;
   }
-  .nav-full { display: none; }
-  .nav-short { display: inline; }
-  .brand, .text-link {
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-  }
-  .text-link {
-    padding: 8px 6px;
+  .add-btn {
+    padding: 10px 14px;
+    min-height: 44px;
   }
   .icon-btn {
     padding: 8px 10px;
@@ -721,10 +762,12 @@ p { margin: 0; }
   .open-cursor { display: none; }
   .index-head, .recipe-toolbar { flex-direction: column; align-items: stretch; }
   .recipe-page, .index-page, .form-page {
-    padding: 8px 16px 64px;
+    padding: 8px 16px 32px;
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(64px, env(safe-area-inset-bottom));
+  }
+  .search-dock {
+    padding: 8px 16px max(12px, env(safe-area-inset-bottom));
   }
   .index-page h1, .form-page h1, .toc-panel h1 {
     font-size: clamp(28px, 9vw, 40px);
@@ -747,7 +790,6 @@ p { margin: 0; }
   .cover-art { padding: 16px 16px 14px; }
   .cover-art h2 { font-size: 28px; }
   .header-actions { gap: 8px; }
-  .text-link { font-size: 13px; }
 }
 
 @media (hover: none) {
@@ -756,6 +798,8 @@ p { margin: 0; }
 }
 
 @media print {
+  .app-shell { height: auto; display: block; }
+  .app-main { overflow: visible; }
   .site-header, .print-hide { display: none !important; }
   .recipe-page { padding: 0; max-width: none; }
   .checklist input { display: none; }

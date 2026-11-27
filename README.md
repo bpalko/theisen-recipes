@@ -1,6 +1,6 @@
 # Theisen Recipes
 
-A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the A–Z index and live search find anything; family members can add recipes and photos.
+A family recipe bookshelf behind **Cloudflare Access** (email one-time PINs). Books sit on a 3D shelf by category; the search bar at the bottom opens an A–Z list that filters as you type; family members can add recipes and photos.
 
 The 15 recipes in `src/content/recipes/` are **sample starters**. Swap them for real Theisen recipes, or leave them and add the real ones through the **Add recipe** screen (those persist in R2, not git).
 

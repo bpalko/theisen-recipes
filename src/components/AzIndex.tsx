@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { getBook } from "../../shared/books.ts";
 import { groupRecipesByLetter, searchRecipes } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
 
 export function AzIndex() {
   const { recipes } = useRecipes();
-  const [query, setQuery] = useState("");
+  const [params] = useSearchParams();
+  const query = params.get("q") ?? "";
   const filtered = useMemo(() => searchRecipes(recipes, query), [recipes, query]);
   const groups = useMemo(() => groupRecipesByLetter(filtered), [filtered]);
 
@@ -15,17 +16,8 @@ export function AzIndex() {
       <div className="index-head">
         <div>
           <p className="eyebrow">Directory</p>
-          <h1>A–Z Index</h1>
+          <h1>{query.trim() ? "Matching recipes" : "All recipes"}</h1>
         </div>
-        <label className="search">
-          <span className="sr-only">Search recipes</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search titles, ingredients, tags, family…"
-            type="search"
-          />
-        </label>
       </div>
 
       {groups.length === 0 ? (
