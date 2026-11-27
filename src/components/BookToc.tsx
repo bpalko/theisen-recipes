@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { getBook } from "../../shared/books.ts";
+import { getBook, normalizeBookId } from "../../shared/books.ts";
 import { recipesForBook } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
 import { CoverArt } from "./CoverArt.tsx";
@@ -9,7 +9,8 @@ export function BookToc() {
   const { bookId = "" } = useParams();
   const navigate = useNavigate();
   const { recipes } = useRecipes();
-  const book = getBook(bookId);
+  const resolvedId = normalizeBookId(bookId);
+  const book = resolvedId ? getBook(resolvedId) : undefined;
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -19,6 +20,9 @@ export function BookToc() {
     return () => window.removeEventListener("keydown", onKey);
   }, [navigate]);
 
+  if (book && resolvedId && bookId !== resolvedId) {
+    return <Navigate to={`/book/${resolvedId}`} replace />;
+  }
   if (!book) return <Navigate to="/" replace />;
   const contents = recipesForBook(recipes, book.id);
 

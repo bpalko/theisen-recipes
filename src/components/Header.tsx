@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { FILTER_PILLS, type BookId } from "../../shared/books.ts";
+import { FILTER_PILLS, normalizeBookId, type BookId } from "../../shared/books.ts";
 import { dismissKeyboard } from "../visualViewport.ts";
 
 export function Header() {
@@ -7,7 +7,7 @@ export function Header() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const onShelf = location.pathname === "/";
-  const activeFilter = (params.get("book") as BookId | "all" | null) ?? "all";
+  const activeFilter = (normalizeBookId(params.get("book")) ?? "all") as "all" | BookId;
 
   function goToFilter(id: "all" | BookId) {
     dismissKeyboard();

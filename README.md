@@ -49,7 +49,7 @@ pnpm check    # tests + typecheck + production build
 4. Attach pictures if you have them (JPEG, PNG, WebP, or GIF; up to 6, 8 MB each).
 5. Save. The recipe JSON and photos go to the **R2 bucket**; they survive deploys.
 
-`category` must be one of: `baking`, `mains`, `soups`, `sides`, `desserts`, `holidays`.
+`category` must be one of: `baking`, `appetizers`, `mains`, `soups`, `miscellaneous`, `holidays`. Retired slugs: `desserts` → `baking`, `sides` → `miscellaneous`.
 
 ## Deploy to Cloudflare Pages
 

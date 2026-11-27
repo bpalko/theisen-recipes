@@ -1,5 +1,5 @@
 import type { Recipe, RecipePhoto } from "../../shared/recipes.ts";
-import { isBookId } from "../../shared/recipes.ts";
+import { normalizeBookId } from "../../shared/books.ts";
 
 const RECIPE_PREFIX = "recipes/";
 const PHOTO_PREFIX = "photos/";
@@ -16,13 +16,14 @@ function asRecipe(value: unknown): Recipe | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Partial<Recipe>;
   if (typeof record.slug !== "string" || typeof record.title !== "string") return null;
-  if (!record.category || !isBookId(record.category)) return null;
+  const category = typeof record.category === "string" ? normalizeBookId(record.category) : null;
+  if (!category) return null;
   if (!Array.isArray(record.ingredients) || !Array.isArray(record.steps)) return null;
   const photos = Array.isArray(record.photos) ? record.photos.filter(isPhoto) : [];
   return {
     slug: record.slug,
     title: record.title,
-    category: record.category,
+    category,
     contributor: typeof record.contributor === "string" ? record.contributor : "",
     prepTime: typeof record.prepTime === "string" ? record.prepTime : "",
     cookTime: typeof record.cookTime === "string" ? record.cookTime : "",

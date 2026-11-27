@@ -1,9 +1,9 @@
 export type BookId =
   | "baking"
+  | "appetizers"
   | "mains"
   | "soups"
-  | "sides"
-  | "desserts"
+  | "miscellaneous"
   | "holidays";
 
 export type BookDefinition = {
@@ -20,6 +20,12 @@ export type BookDefinition = {
   pattern: "grain" | "stripes" | "dots" | "bands" | "diamonds" | "grid";
 };
 
+/** Legacy R2 / URL slugs that should resolve to a current book. */
+const LEGACY_BOOK_IDS: Record<string, BookId> = {
+  desserts: "baking",
+  sides: "miscellaneous",
+};
+
 export const BOOKS: BookDefinition[] = [
   {
     id: "baking",
@@ -27,7 +33,7 @@ export const BOOKS: BookDefinition[] = [
     title: "Baking",
     spineTitle: "Baking",
     coverKicker: "Theisen family kitchen",
-    description: "Cinnamon rolls, banana bread, and the biscuits everyone asks for.",
+    description: "Cinnamon rolls, lemon bars, and the cookies everyone asks for.",
     color: "#C45C26",
     ink: "#fffaf3",
     accent: "#8A3414",
@@ -35,8 +41,21 @@ export const BOOKS: BookDefinition[] = [
     pattern: "grain",
   },
   {
-    id: "mains",
+    id: "appetizers",
     number: "02",
+    title: "Appetizers",
+    spineTitle: "Appetizers",
+    coverKicker: "Before the meal",
+    description: "Dips, spreads, and the thing everyone crowds around first.",
+    color: "#1A6B6B",
+    ink: "#f3fbfb",
+    accent: "#0E4343",
+    filterLabel: "Appetizers",
+    pattern: "diamonds",
+  },
+  {
+    id: "mains",
+    number: "03",
     title: "Weeknight Mains",
     spineTitle: "Weeknight Mains",
     coverKicker: "On the table by 6:30",
@@ -49,7 +68,7 @@ export const BOOKS: BookDefinition[] = [
   },
   {
     id: "soups",
-    number: "03",
+    number: "04",
     title: "Soups & Stews",
     spineTitle: "Soups & Stews",
     coverKicker: "Simmer all afternoon",
@@ -61,30 +80,17 @@ export const BOOKS: BookDefinition[] = [
     pattern: "dots",
   },
   {
-    id: "sides",
-    number: "04",
-    title: "Sides & Salads",
-    spineTitle: "Sides & Salads",
-    coverKicker: "Pass to the left",
-    description: "Potluck salads, roasted potatoes, and the dish that disappears first.",
+    id: "miscellaneous",
+    number: "05",
+    title: "Miscellaneous",
+    spineTitle: "Miscellaneous",
+    coverKicker: "Everything else",
+    description: "Seasoning mixes, pantry bottles, and the recipes that don’t live in another book.",
     color: "#D4A017",
     ink: "#1a1404",
     accent: "#8A6808",
-    filterLabel: "Sides",
+    filterLabel: "Miscellaneous",
     pattern: "bands",
-  },
-  {
-    id: "desserts",
-    number: "05",
-    title: "Desserts",
-    spineTitle: "Desserts",
-    coverKicker: "Save room",
-    description: "Cookie sheets, lemon bars, and apple crisp still warm from the oven.",
-    color: "#7B2D3B",
-    ink: "#fff6f7",
-    accent: "#4C1520",
-    filterLabel: "Desserts",
-    pattern: "diamonds",
   },
   {
     id: "holidays",
@@ -114,4 +120,10 @@ export function getBook(id: string): BookDefinition | undefined {
 
 export function bookIndex(id: string): number {
   return BOOKS.findIndex((book) => book.id === id);
+}
+
+export function normalizeBookId(value: string | null | undefined): BookId | null {
+  if (!value) return null;
+  const mapped = LEGACY_BOOK_IDS[value] ?? value;
+  return getBook(mapped) ? (mapped as BookId) : null;
 }

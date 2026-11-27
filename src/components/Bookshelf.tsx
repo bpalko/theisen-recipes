@@ -1,15 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { BOOKS, bookIndex, type BookId } from "../../shared/books.ts";
+import { BOOKS, bookIndex, normalizeBookId, type BookId } from "../../shared/books.ts";
 import { recipesForBook } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
 import { Book } from "./Book.tsx";
+
+function centerSlot(row: HTMLElement, slot: HTMLElement) {
+  const rowRect = row.getBoundingClientRect();
+  const slotRect = slot.getBoundingClientRect();
+  const delta = slotRect.left + slotRect.width / 2 - (rowRect.left + row.clientWidth / 2);
+  if (Math.abs(delta) < 0.5) return;
+  row.scrollLeft += delta;
+}
 
 export function Bookshelf() {
   const { recipes } = useRecipes();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const requested = params.get("book") as BookId | null;
+  const requested = normalizeBookId(params.get("book"));
   const initial = requested ? Math.max(0, bookIndex(requested)) : 0;
   const [focused, setFocused] = useState(initial);
   const [openHint, setOpenHint] = useState<{ x: number; y: number } | null>(null);
@@ -49,15 +57,40 @@ export function Bookshelf() {
     return () => window.removeEventListener("keydown", onKey);
   }, [focused, focusBook, navigate]);
 
+  const centerFocused = useCallback(() => {
+    const row = shelfRef.current;
+    const slot = row?.querySelector<HTMLElement>("[data-focused='true']");
+    if (!row || !slot) return;
+    centerSlot(row, slot);
+  }, []);
+
+  useLayoutEffect(() => {
+    centerFocused();
+  }, [focused, centerFocused]);
+
   useEffect(() => {
     const row = shelfRef.current;
-    const el = row?.querySelector<HTMLElement>("[data-focused='true']");
-    if (!row || !el) return;
-    const rowRect = row.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    const delta = elRect.left + elRect.width / 2 - (rowRect.left + rowRect.width / 2);
-    if (Math.abs(delta) > 2) row.scrollBy({ left: delta, behavior: "smooth" });
-  }, [focused]);
+    if (!row) return;
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.propertyName === "flex-basis" || event.propertyName === "transform") {
+        centerFocused();
+      }
+    };
+    row.addEventListener("transitionend", onTransitionEnd);
+    row.addEventListener("scrollend", centerFocused);
+    window.addEventListener("resize", centerFocused);
+
+    const observer = new ResizeObserver(centerFocused);
+    observer.observe(row);
+    for (const child of row.children) observer.observe(child);
+
+    return () => {
+      row.removeEventListener("transitionend", onTransitionEnd);
+      row.removeEventListener("scrollend", centerFocused);
+      window.removeEventListener("resize", centerFocused);
+      observer.disconnect();
+    };
+  }, [focused, centerFocused]);
 
   const counts = useMemo(
     () =>
@@ -68,6 +101,8 @@ export function Bookshelf() {
   );
 
   const book = BOOKS[focused];
+  const atStart = focused === 0;
+  const atEnd = focused === BOOKS.length - 1;
 
   return (
     <main className="shelf-page">
@@ -93,7 +128,7 @@ export function Bookshelf() {
           type="button"
           className="round-btn"
           aria-label="Previous book"
-          disabled={focused === 0}
+          disabled={atStart}
           onClick={() => focusBook(focused - 1)}
         >
           ‹
@@ -106,7 +141,7 @@ export function Bookshelf() {
           type="button"
           className="round-btn"
           aria-label="Next book"
-          disabled={focused === BOOKS.length - 1}
+          disabled={atEnd}
           onClick={() => focusBook(focused + 1)}
         >
           ›
