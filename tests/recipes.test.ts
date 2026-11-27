@@ -14,7 +14,7 @@ import {
 } from "../shared/recipes.ts";
 import { slugify, uniqueSlug } from "../shared/slug.ts";
 
-const recipesDir = join(dirname(fileURLToPath(import.meta.url)), "../src/content/recipes");
+const recipesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures/recipes");
 
 function loadSeed() {
   const files = readdirSync(recipesDir)
@@ -29,8 +29,8 @@ function loadSeed() {
 describe("recipe indexing", () => {
   const recipes = loadSeed();
 
-  it("loads every seeded markdown file with required fields", () => {
-    expect(recipes.length).toBeGreaterThanOrEqual(12);
+  it("loads every fixture markdown file with required fields", () => {
+    expect(recipes.length).toBeGreaterThanOrEqual(6);
     for (const recipe of recipes) {
       expect(recipe.title.length).toBeGreaterThan(2);
       expect(recipe.ingredients.length).toBeGreaterThan(0);

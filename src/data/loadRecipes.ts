@@ -1,14 +1,7 @@
-import { loadRecipesFromFiles, type Recipe } from "../../shared/recipes.ts";
+import type { Recipe } from "../../shared/recipes.ts";
 
-const modules = import.meta.glob("../content/recipes/*.md", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as Record<string, string>;
-
-export const seedRecipes: Recipe[] = loadRecipesFromFiles(
-  Object.entries(modules).map(([path, raw]) => ({ path, raw })),
-);
+/** Family recipes live in R2. Nothing is bundled from the repo. */
+export const seedRecipes: Recipe[] = [];
 
 export async function fetchFamilyRecipes(): Promise<Recipe[]> {
   try {
