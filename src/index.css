@@ -44,7 +44,9 @@ p { margin: 0; }
 .app-main {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
 
