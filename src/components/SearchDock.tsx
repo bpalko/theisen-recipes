@@ -87,11 +87,16 @@ export function SearchDock() {
             }}
           />
         </label>
-        {searching ? (
-          <button type="button" className="search-dock-close" onClick={dismiss}>
-            Close
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="search-dock-close"
+          onClick={dismiss}
+          tabIndex={searching ? 0 : -1}
+          aria-hidden={searching ? undefined : true}
+          disabled={!searching}
+        >
+          Close
+        </button>
       </div>
     </form>
   );

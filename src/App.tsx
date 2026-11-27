@@ -33,11 +33,15 @@ function AppShell() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-        {searching ? (
-          <div className="search-sheet" role="dialog" aria-label="Recipe search">
-            <AzIndex />
-          </div>
-        ) : null}
+      </div>
+      <div
+        className={searching ? "search-sheet is-open" : "search-sheet"}
+        role="dialog"
+        aria-label="Recipe search"
+        aria-hidden={searching ? undefined : true}
+        inert={searching ? undefined : true}
+      >
+        <AzIndex />
       </div>
       <SearchDock />
     </div>
