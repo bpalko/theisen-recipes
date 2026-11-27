@@ -13,18 +13,22 @@
 
 * { box-sizing: border-box; }
 html {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
-html, body, #root { min-height: 100%; }
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   letter-spacing: -0.01em;
-  overflow-x: hidden;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button, a, .pill, .icon-btn, .add-btn, .round-btn, .submit-btn {
@@ -35,11 +39,14 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.04em; }
 p { margin: 0; }
 
 .app-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
-  height: 100dvh;
+  position: fixed;
+  top: var(--app-offset-top, 0px);
+  left: 0;
+  right: 0;
+  height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .app-main {
   flex: 1;
@@ -67,10 +74,10 @@ p { margin: 0; }
   align-items: center;
   gap: 16px;
   padding: var(--header-pad);
+  padding-top: max(22px, env(safe-area-inset-top));
   padding-left: max(28px, env(safe-area-inset-left));
   padding-right: max(28px, env(safe-area-inset-right));
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 30;
   background: var(--bg);
 }
@@ -149,7 +156,11 @@ p { margin: 0; }
 }
 
 .shelf-page {
-  padding: 12px 0 48px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 0 24px;
   overflow: hidden;
 }
 .shelf-stage {
@@ -717,6 +728,7 @@ p { margin: 0; }
     align-items: center;
     gap: 10px 12px;
     padding: var(--header-pad);
+    padding-top: max(12px, env(safe-area-inset-top));
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
   }
@@ -783,6 +795,7 @@ p { margin: 0; }
     height: 48px;
   }
   .open-cursor { display: none; }
+  .shelf-page { padding: 8px 0 16px; }
   .index-head, .recipe-toolbar { flex-direction: column; align-items: stretch; }
   .recipe-page, .index-page, .form-page {
     padding: 8px 16px 32px;
@@ -826,7 +839,16 @@ p { margin: 0; }
 }
 
 @media print {
-  .app-shell { height: auto; display: block; }
+  html, body, #root {
+    height: auto;
+    overflow: visible;
+  }
+  .app-shell {
+    position: static;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
   .app-main { overflow: visible; }
   .site-header, .print-hide { display: none !important; }
   .recipe-page { padding: 0; max-width: none; }

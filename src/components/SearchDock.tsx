@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { resetDocumentScroll } from "../visualViewport.ts";
 
 type SearchQueryValue = {
   query: string;
@@ -31,6 +32,8 @@ export function SearchDock() {
   useEffect(() => {
     if (location.pathname !== "/index") {
       setQuery("");
+      inputRef.current?.blur();
+      resetDocumentScroll();
       return;
     }
     if (document.activeElement === inputRef.current) return;
@@ -53,6 +56,7 @@ export function SearchDock() {
   function closeSearch() {
     setQuery("");
     inputRef.current?.blur();
+    resetDocumentScroll();
     navigate("/");
   }
 
@@ -63,6 +67,7 @@ export function SearchDock() {
       event.preventDefault();
       setQuery("");
       inputRef.current?.blur();
+      resetDocumentScroll();
       navigate("/");
     }
     window.addEventListener("keydown", onKey);

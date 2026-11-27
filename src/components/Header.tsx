@@ -1,5 +1,6 @@
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { FILTER_PILLS, type BookId } from "../../shared/books.ts";
+import { dismissKeyboard } from "../visualViewport.ts";
 
 export function Header() {
   const location = useLocation();
@@ -9,6 +10,7 @@ export function Header() {
   const activeFilter = (params.get("book") as BookId | "all" | null) ?? "all";
 
   function goToFilter(id: "all" | BookId) {
+    dismissKeyboard();
     if (!onShelf) {
       navigate(id === "all" ? "/" : `/?book=${id}`);
       return;
@@ -21,7 +23,7 @@ export function Header() {
 
   return (
     <header className="site-header">
-      <Link className="brand" to="/">
+      <Link className="brand" to="/" onClick={() => dismissKeyboard()}>
         Theisen Recipes
       </Link>
 

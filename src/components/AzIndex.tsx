@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getBook } from "../../shared/books.ts";
 import { groupRecipesByLetter, searchRecipes } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
+import { dismissKeyboard } from "../visualViewport.ts";
 import { useSearchQuery } from "./SearchDock.tsx";
 
 export function AzIndex() {
@@ -18,7 +19,7 @@ export function AzIndex() {
           <p className="eyebrow">Directory</p>
           <h1>All recipes</h1>
         </div>
-        <Link className="back-link" to="/">
+        <Link className="back-link" to="/" onClick={() => dismissKeyboard()}>
           ← Back to shelf
         </Link>
       </div>
