@@ -6,8 +6,10 @@ type SearchQueryValue = {
   query: string;
   setQuery: (value: string) => void;
   searching: boolean;
+  keyboardOpen: boolean;
   openSearch: () => void;
   closeSearch: () => void;
+  setKeyboardOpen: (value: boolean) => void;
 };
 
 const SearchQueryContext = createContext<SearchQueryValue | null>(null);
@@ -15,20 +17,23 @@ const SearchQueryContext = createContext<SearchQueryValue | null>(null);
 export function SearchQueryProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const openSearch = useCallback(() => {
     setSearching(true);
+    setKeyboardOpen(true);
   }, []);
 
   const closeSearch = useCallback(() => {
     setQuery("");
     setSearching(false);
+    setKeyboardOpen(false);
     resetDocumentScroll();
   }, []);
 
   const value = useMemo(
-    () => ({ query, setQuery, searching, openSearch, closeSearch }),
-    [query, searching, openSearch, closeSearch],
+    () => ({ query, setQuery, searching, keyboardOpen, openSearch, closeSearch, setKeyboardOpen }),
+    [query, searching, keyboardOpen, openSearch, closeSearch],
   );
   return <SearchQueryContext.Provider value={value}>{children}</SearchQueryContext.Provider>;
 }
@@ -41,7 +46,7 @@ export function useSearchQuery(): SearchQueryValue {
 
 export function SearchDock() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { query, setQuery, searching, openSearch, closeSearch } = useSearchQuery();
+  const { query, setQuery, searching, openSearch, closeSearch, setKeyboardOpen } = useSearchQuery();
 
   function dismiss() {
     closeSearch();
@@ -66,7 +71,7 @@ export function SearchDock() {
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        openSearch();
+        setKeyboardOpen(false);
         inputRef.current?.blur();
       }}
     >
@@ -84,6 +89,7 @@ export function SearchDock() {
               openSearch();
               resetDocumentScroll();
             }}
+            onBlur={() => setKeyboardOpen(false)}
             onChange={(event) => {
               setQuery(event.target.value);
               openSearch();

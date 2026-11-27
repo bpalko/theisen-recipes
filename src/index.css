@@ -50,7 +50,7 @@ p { margin: 0; }
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
 }
-.app-shell.is-searching {
+.app-shell.is-searching.is-keyboard {
   top: var(--vv-offset, 0px);
   height: var(--vv-height, 100dvh);
 }

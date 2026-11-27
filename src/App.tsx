@@ -17,7 +17,7 @@ function OpenSearchHome() {
 }
 
 function AppShell() {
-  const { searching } = useSearchQuery();
+  const { searching, keyboardOpen } = useSearchQuery();
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,7 +25,15 @@ function AppShell() {
   }, [searching]);
 
   return (
-    <div className={searching ? "app-shell is-searching" : "app-shell"}>
+    <div
+      className={[
+        "app-shell",
+        searching ? "is-searching" : "",
+        searching && keyboardOpen ? "is-keyboard" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <Header />
       <div className="app-main">
         <div className="app-page" aria-hidden={searching || undefined}>
