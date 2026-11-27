@@ -18,6 +18,9 @@ export function AzIndex() {
           <p className="eyebrow">Directory</p>
           <h1>All recipes</h1>
         </div>
+        <Link className="back-link" to="/">
+          ← Back to shelf
+        </Link>
       </div>
 
       {groups.length === 0 ? (

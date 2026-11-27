@@ -37,6 +37,8 @@ export function SearchDock() {
     setQuery(params.get("q") ?? "");
   }, [location.pathname, params, setQuery]);
 
+  const onIndex = location.pathname === "/index";
+
   function openIndex(nextQuery = query) {
     const search = nextQuery.trim() ? `?q=${encodeURIComponent(nextQuery)}` : "";
     if (location.pathname !== "/index") {
@@ -48,6 +50,25 @@ export function SearchDock() {
     navigate({ pathname: "/index", search }, { replace: true });
   }
 
+  function closeSearch() {
+    setQuery("");
+    inputRef.current?.blur();
+    navigate("/");
+  }
+
+  useEffect(() => {
+    if (!onIndex) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setQuery("");
+      inputRef.current?.blur();
+      navigate("/");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onIndex, navigate, setQuery]);
+
   return (
     <form
       className="search-dock print-hide"
@@ -58,23 +79,30 @@ export function SearchDock() {
         inputRef.current?.blur();
       }}
     >
-      <label className="search-dock-field">
-        <span className="sr-only">Search recipes</span>
-        <input
-          ref={inputRef}
-          type="search"
-          value={query}
-          placeholder="Search recipes"
-          autoComplete="off"
-          enterKeyHint="search"
-          onFocus={() => openIndex()}
-          onChange={(event) => {
-            const value = event.target.value;
-            setQuery(value);
-            openIndex(value);
-          }}
-        />
-      </label>
+      <div className="search-dock-bar">
+        <label className="search-dock-field">
+          <span className="sr-only">Search recipes</span>
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            placeholder="Search recipes"
+            autoComplete="off"
+            enterKeyHint="search"
+            onFocus={() => openIndex()}
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              openIndex(value);
+            }}
+          />
+        </label>
+        {onIndex ? (
+          <button type="button" className="search-dock-close" onClick={closeSearch}>
+            Close
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }
