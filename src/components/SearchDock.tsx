@@ -44,8 +44,8 @@ export function SearchDock() {
   const { query, setQuery, searching, openSearch, closeSearch } = useSearchQuery();
 
   function dismiss() {
-    inputRef.current?.blur();
     closeSearch();
+    inputRef.current?.blur();
   }
 
   useEffect(() => {
@@ -80,7 +80,10 @@ export function SearchDock() {
             placeholder="Search recipes"
             autoComplete="off"
             enterKeyHint="search"
-            onFocus={() => openSearch()}
+            onFocus={() => {
+              openSearch();
+              resetDocumentScroll();
+            }}
             onChange={(event) => {
               setQuery(event.target.value);
               openSearch();

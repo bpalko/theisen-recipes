@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AddRecipe } from "./components/AddRecipe.tsx";
 import { AzIndex } from "./components/AzIndex.tsx";
@@ -18,6 +18,11 @@ function OpenSearchHome() {
 
 function AppShell() {
   const { searching } = useSearchQuery();
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    sheetRef.current?.scrollTo(0, 0);
+  }, [searching]);
 
   return (
     <div className={searching ? "app-shell is-searching" : "app-shell"}>
@@ -35,6 +40,7 @@ function AppShell() {
         </div>
       </div>
       <div
+        ref={sheetRef}
         className={searching ? "search-sheet is-open" : "search-sheet"}
         role="dialog"
         aria-label="Recipe search"

@@ -1,12 +1,8 @@
 function syncVisualViewport() {
   const viewport = window.visualViewport;
   const root = document.documentElement;
-  if (!viewport) {
-    root.style.setProperty("--keyboard-inset", "0px");
-    return;
-  }
-  const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-  root.style.setProperty("--keyboard-inset", `${inset > 100 ? Math.round(inset) : 0}px`);
+  root.style.setProperty("--vv-height", `${viewport?.height ?? window.innerHeight}px`);
+  root.style.setProperty("--vv-offset", `${viewport?.offsetTop ?? 0}px`);
 }
 
 export function resetDocumentScroll() {
@@ -16,7 +12,9 @@ export function resetDocumentScroll() {
 }
 
 export function dismissKeyboard() {
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
   resetDocumentScroll();
 }
 
