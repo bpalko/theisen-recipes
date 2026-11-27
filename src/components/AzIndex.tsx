@@ -16,7 +16,7 @@ export function AzIndex() {
       <div className="index-head">
         <div>
           <p className="eyebrow">Directory</p>
-          <h1>{query.trim() ? "Matching recipes" : "All recipes"}</h1>
+          <h1>All recipes</h1>
         </div>
       </div>
 
