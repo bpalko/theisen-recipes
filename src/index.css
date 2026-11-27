@@ -200,6 +200,7 @@ p { margin: 0; }
   padding: 40px max(24px, calc(50% - var(--cover-w) / 2)) 56px;
   overflow-x: auto;
   overflow-y: hidden;
+  overflow-anchor: none;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
@@ -860,18 +861,15 @@ p { margin: 0; }
     overflow: visible;
   }
   .shelf-row {
-    scroll-snap-type: none;
+    scroll-snap-type: x mandatory;
     padding: 28px max(28px, calc(50% - var(--cover-w) / 2)) 48px;
+    -webkit-overflow-scrolling: touch;
   }
   .book-slot {
-    transition: none;
     overflow: hidden;
   }
   .book-slot.is-focused {
     overflow: visible;
-  }
-  .book-3d {
-    transition: none;
   }
   .book-slot.is-focused .book-3d {
     transform: rotateY(0deg);
@@ -949,6 +947,13 @@ p { margin: 0; }
   .cover-art h2 { font-size: 28px; }
   .header-actions { gap: 8px; }
   .shelf-caption { min-width: 0; flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-slot,
+  .book-3d {
+    transition: none;
+  }
 }
 
 @media (hover: none) {
