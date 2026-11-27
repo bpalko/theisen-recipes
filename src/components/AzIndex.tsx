@@ -3,27 +3,16 @@ import { Link } from "react-router-dom";
 import { getBook } from "../../shared/books.ts";
 import { groupRecipesByLetter, searchRecipes } from "../../shared/recipes.ts";
 import { useRecipes } from "../data/RecipeContext.tsx";
-import { dismissKeyboard } from "../visualViewport.ts";
 import { useSearchQuery } from "./SearchDock.tsx";
 
 export function AzIndex() {
   const { recipes } = useRecipes();
-  const { query } = useSearchQuery();
+  const { query, closeSearch } = useSearchQuery();
   const filtered = useMemo(() => searchRecipes(recipes, query), [recipes, query]);
   const groups = useMemo(() => groupRecipesByLetter(filtered), [filtered]);
 
   return (
-    <main className="index-page">
-      <div className="index-head">
-        <div>
-          <p className="eyebrow">Directory</p>
-          <h1>All recipes</h1>
-        </div>
-        <Link className="back-link" to="/" onClick={() => dismissKeyboard()}>
-          ← Back to shelf
-        </Link>
-      </div>
-
+    <div className="index-page is-sheet">
       {groups.length === 0 ? (
         <p className="empty">No recipes match that search.</p>
       ) : (
@@ -35,10 +24,16 @@ export function AzIndex() {
                 const book = getBook(recipe.category);
                 return (
                   <li key={recipe.slug}>
-                    <Link to={`/recipe/${recipe.slug}`}>{recipe.title}</Link>
-                    <span>
-                      {[book?.title, recipe.contributor].filter(Boolean).join(" · ")}
-                    </span>
+                    <Link
+                      className="index-row"
+                      to={`/recipe/${recipe.slug}`}
+                      onClick={() => closeSearch()}
+                    >
+                      <span className="index-row-title">{recipe.title}</span>
+                      <span className="index-row-meta">
+                        {[book?.title, recipe.contributor].filter(Boolean).join(" · ")}
+                      </span>
+                    </Link>
                   </li>
                 );
               })}
@@ -46,6 +41,6 @@ export function AzIndex() {
           </section>
         ))
       )}
-    </main>
+    </div>
   );
 }

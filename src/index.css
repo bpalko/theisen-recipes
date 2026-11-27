@@ -51,9 +51,24 @@ p { margin: 0; }
 .app-main {
   flex: 1;
   min-height: 0;
+  position: relative;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+.app-page { min-height: 100%; }
+.app-shell.is-searching .site-header { display: none; }
+.app-shell.is-searching .app-main {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+.search-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--bg);
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -576,6 +591,30 @@ p { margin: 0; }
 .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .index-page h1 { font-size: 48px; margin: 6px 0 0; }
+.index-page.is-sheet {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 8px 20px 16px;
+}
+.index-page.is-sheet .letter-block { margin-top: 14px; }
+.index-page.is-sheet .letter-block:first-child { margin-top: 0; }
+.index-page.is-sheet .letter-block h2 {
+  font-size: 15px;
+  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+}
+.index-page.is-sheet .letter-block li { padding: 0; border-bottom: 1px solid var(--line); }
+.index-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 0;
+  min-height: 44px;
+  text-decoration: none;
+  font-weight: 700;
+}
+.index-row-meta { color: var(--muted); font-size: 14px; font-weight: 500; }
 .search-dock {
   flex-shrink: 0;
   padding: 10px 20px max(16px, env(safe-area-inset-bottom));
@@ -805,6 +844,11 @@ p { margin: 0; }
   .search-dock {
     padding: 8px 16px max(12px, env(safe-area-inset-bottom));
   }
+  .index-page.is-sheet {
+    padding: 8px 16px 12px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
   .search-dock-close, .index-head .back-link {
     min-height: 44px;
     display: inline-flex;
@@ -813,7 +857,7 @@ p { margin: 0; }
   .index-page h1, .form-page h1, .toc-panel h1 {
     font-size: clamp(28px, 9vw, 40px);
   }
-  .letter-block li {
+  .letter-block li, .index-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;

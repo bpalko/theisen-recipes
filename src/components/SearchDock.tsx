@@ -1,18 +1,35 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { resetDocumentScroll } from "../visualViewport.ts";
 
 type SearchQueryValue = {
   query: string;
   setQuery: (value: string) => void;
+  searching: boolean;
+  openSearch: () => void;
+  closeSearch: () => void;
 };
 
 const SearchQueryContext = createContext<SearchQueryValue | null>(null);
 
 export function SearchQueryProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
-  const value = useMemo(() => ({ query, setQuery }), [query]);
+  const [searching, setSearching] = useState(false);
+
+  const openSearch = useCallback(() => {
+    setSearching(true);
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setQuery("");
+    setSearching(false);
+    resetDocumentScroll();
+  }, []);
+
+  const value = useMemo(
+    () => ({ query, setQuery, searching, openSearch, closeSearch }),
+    [query, searching, openSearch, closeSearch],
+  );
   return <SearchQueryContext.Provider value={value}>{children}</SearchQueryContext.Provider>;
 }
 
@@ -23,56 +40,25 @@ export function useSearchQuery(): SearchQueryValue {
 }
 
 export function SearchDock() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { query, setQuery } = useSearchQuery();
+  const { query, setQuery, searching, openSearch, closeSearch } = useSearchQuery();
 
-  useEffect(() => {
-    if (location.pathname !== "/index") {
-      setQuery("");
-      inputRef.current?.blur();
-      resetDocumentScroll();
-      return;
-    }
-    if (document.activeElement === inputRef.current) return;
-    setQuery(params.get("q") ?? "");
-  }, [location.pathname, params, setQuery]);
-
-  const onIndex = location.pathname === "/index";
-
-  function openIndex(nextQuery = query) {
-    const search = nextQuery.trim() ? `?q=${encodeURIComponent(nextQuery)}` : "";
-    if (location.pathname !== "/index") {
-      navigate(`/index${search}`);
-      return;
-    }
-    const current = params.get("q") ?? "";
-    if (current === nextQuery) return;
-    navigate({ pathname: "/index", search }, { replace: true });
-  }
-
-  function closeSearch() {
-    setQuery("");
+  function dismiss() {
     inputRef.current?.blur();
-    resetDocumentScroll();
-    navigate("/");
+    closeSearch();
   }
 
   useEffect(() => {
-    if (!onIndex) return;
+    if (!searching) return;
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      setQuery("");
       inputRef.current?.blur();
-      resetDocumentScroll();
-      navigate("/");
+      closeSearch();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onIndex, navigate, setQuery]);
+  }, [searching, closeSearch]);
 
   return (
     <form
@@ -80,7 +66,7 @@ export function SearchDock() {
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        openIndex();
+        openSearch();
         inputRef.current?.blur();
       }}
     >
@@ -94,16 +80,15 @@ export function SearchDock() {
             placeholder="Search recipes"
             autoComplete="off"
             enterKeyHint="search"
-            onFocus={() => openIndex()}
+            onFocus={() => openSearch()}
             onChange={(event) => {
-              const value = event.target.value;
-              setQuery(value);
-              openIndex(value);
+              setQuery(event.target.value);
+              openSearch();
             }}
           />
         </label>
-        {onIndex ? (
-          <button type="button" className="search-dock-close" onClick={closeSearch}>
+        {searching ? (
+          <button type="button" className="search-dock-close" onClick={dismiss}>
             Close
           </button>
         ) : null}
