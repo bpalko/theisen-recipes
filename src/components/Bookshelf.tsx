@@ -119,6 +119,15 @@ function clearSlotWidths(slots: NodeListOf<HTMLElement> | HTMLElement[]) {
   });
 }
 
+/** Spine midpoint of slot `index` in the layout where `openIndex` is the wide cover. */
+function spineMid(metrics: Metrics, openIndex: number, index: number): number {
+  let x = metrics.padL;
+  for (let i = 0; i < index; i++) {
+    x += (i === openIndex ? metrics.cover : metrics.spine) + metrics.gap;
+  }
+  return x + metrics.spine / 2;
+}
+
 function nearestIndex(scrollLeft: number, metrics: Metrics, openIndex: number): number {
   const max = maxScroll(metrics);
   if (scrollLeft <= 1) return 0;
@@ -127,7 +136,7 @@ function nearestIndex(scrollLeft: number, metrics: Metrics, openIndex: number): 
   let best = 0;
   let bestDist = Infinity;
   for (let i = 0; i < metrics.count; i++) {
-    const dist = Math.abs(slotCenterAt(metrics, openIndex, openIndex, i, 1) - viewCenter);
+    const dist = Math.abs(spineMid(metrics, openIndex, i) - viewCenter);
     if (dist < bestDist) {
       bestDist = dist;
       best = i;
@@ -150,13 +159,14 @@ export function Bookshelf() {
   const focusedRef = useRef(focused);
   const visualRef = useRef(visual);
   const skipUrlSelect = useRef(false);
-  const pointerDown = useRef(false);
   const animating = useRef(false);
   const rafRef = useRef(0);
   const visualRaf = useRef(0);
   const settleTimer = useRef(0);
   const pendingAnim = useRef<{ from: number; to: number; startScroll: number } | null>(null);
   const ignoreSettle = useRef(false);
+  const ignoreSettleTimer = useRef(0);
+  const pointers = useRef(0);
 
   focusedRef.current = focused;
   visualRef.current = visual;
@@ -171,6 +181,19 @@ export function Bookshelf() {
     window.cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
     animating.current = false;
+  }, []);
+
+  const lockSettle = useCallback((ms: number) => {
+    ignoreSettle.current = true;
+    window.clearTimeout(ignoreSettleTimer.current);
+    ignoreSettleTimer.current = window.setTimeout(() => {
+      ignoreSettle.current = false;
+    }, ms);
+  }, []);
+
+  const unlockSettle = useCallback(() => {
+    window.clearTimeout(ignoreSettleTimer.current);
+    ignoreSettle.current = false;
   }, []);
 
   const applyFocus = useCallback(
@@ -201,7 +224,7 @@ export function Bookshelf() {
         return;
       }
       animating.current = true;
-      ignoreSettle.current = true;
+      lockSettle(duration + 80);
       row.scrollLeft = scrollAt(0);
       const start = performance.now();
       const tick = (now: number) => {
@@ -214,13 +237,11 @@ export function Bookshelf() {
         row.scrollLeft = scrollAt(1);
         animating.current = false;
         onDone?.();
-        window.setTimeout(() => {
-          ignoreSettle.current = false;
-        }, 80);
+        lockSettle(80);
       };
       rafRef.current = window.requestAnimationFrame(tick);
     },
-    [cancelAnim],
+    [cancelAnim, lockSettle],
   );
 
   const selectBook = useCallback(
@@ -239,6 +260,14 @@ export function Bookshelf() {
         return;
       }
       if (prefersReducedMotion()) {
+        applyFocus(next);
+        row.scrollLeft = clampScroll(
+          slotCenterAt(metrics, next, next, next, 1) - metrics.clientWidth / 2,
+          metrics,
+        );
+        return;
+      }
+      if (from === next) {
         applyFocus(next);
         row.scrollLeft = clampScroll(
           slotCenterAt(metrics, next, next, next, 1) - metrics.clientWidth / 2,
@@ -334,7 +363,8 @@ export function Bookshelf() {
     refreshMetrics();
 
     const settleFromSwipe = () => {
-      if (animating.current || pointerDown.current || ignoreSettle.current) return;
+      if (animating.current || pointers.current > 0) return;
+      if (ignoreSettle.current) return;
       const metrics = metricsRef.current;
       if (!metrics) return;
       const nearest = nearestIndex(row.scrollLeft, metrics, focusedRef.current);
@@ -353,6 +383,11 @@ export function Bookshelf() {
       runScrollAnim(row, SETTLE_MS, (e) => start + (target - start) * e);
     };
 
+    const armSettle = (delay: number) => {
+      window.clearTimeout(settleTimer.current);
+      settleTimer.current = window.setTimeout(settleFromSwipe, delay);
+    };
+
     const onScroll = () => {
       if (visualRaf.current) return;
       visualRaf.current = window.requestAnimationFrame(() => {
@@ -365,23 +400,26 @@ export function Bookshelf() {
           setVisual(nearest);
         }
       });
-      if (animating.current || pointerDown.current || ignoreSettle.current) return;
-      window.clearTimeout(settleTimer.current);
-      settleTimer.current = window.setTimeout(settleFromSwipe, 120);
+      if (animating.current || ignoreSettle.current) return;
+      if (pointers.current > 0) return;
+      armSettle(140);
     };
 
     const onScrollEnd = () => {
+      if (pointers.current > 0) return;
       window.clearTimeout(settleTimer.current);
       settleFromSwipe();
     };
 
     const onPointerDown = () => {
-      pointerDown.current = true;
+      pointers.current += 1;
+      unlockSettle();
       window.clearTimeout(settleTimer.current);
       if (animating.current) cancelAnim();
     };
     const onPointerUp = () => {
-      pointerDown.current = false;
+      pointers.current = Math.max(0, pointers.current - 1);
+      if (pointers.current === 0) armSettle(160);
     };
 
     const onResize = () => {
@@ -400,23 +438,24 @@ export function Bookshelf() {
     row.addEventListener("scroll", onScroll, { passive: true });
     row.addEventListener("scrollend", onScrollEnd);
     row.addEventListener("pointerdown", onPointerDown, { passive: true });
-    row.addEventListener("pointerup", onPointerUp, { passive: true });
-    row.addEventListener("pointercancel", onPointerUp, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { passive: true });
+    window.addEventListener("pointercancel", onPointerUp, { passive: true });
     window.addEventListener("resize", onResize);
 
     return () => {
       window.clearTimeout(settleTimer.current);
+      window.clearTimeout(ignoreSettleTimer.current);
       window.cancelAnimationFrame(visualRaf.current);
       cancelAnim();
       ro.disconnect();
       row.removeEventListener("scroll", onScroll);
       row.removeEventListener("scrollend", onScrollEnd);
       row.removeEventListener("pointerdown", onPointerDown);
-      row.removeEventListener("pointerup", onPointerUp);
-      row.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
       window.removeEventListener("resize", onResize);
     };
-  }, [cancelAnim, refreshMetrics, runScrollAnim, selectBook]);
+  }, [cancelAnim, refreshMetrics, runScrollAnim, selectBook, unlockSettle]);
 
   const counts = useMemo(
     () =>
