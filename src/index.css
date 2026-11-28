@@ -197,11 +197,11 @@ p { margin: 0; }
   justify-content: flex-start;
   gap: 8px;
   perspective: 1800px;
-  padding: 40px max(24px, calc(50% - var(--cover-w) / 2)) 56px;
+  padding: 40px max(24px, calc(50% - var(--spine) / 2)) 56px;
   overflow-x: auto;
   overflow-y: hidden;
   overflow-anchor: none;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: none;
   scrollbar-width: none;
 }
 .shelf-row::-webkit-scrollbar { display: none; }
@@ -861,8 +861,8 @@ p { margin: 0; }
     overflow: visible;
   }
   .shelf-row {
-    scroll-snap-type: x mandatory;
-    padding: 28px max(28px, calc(50% - var(--cover-w) / 2)) 48px;
+    scroll-snap-type: none;
+    padding: 28px max(28px, calc(50% - var(--spine) / 2)) 48px;
     -webkit-overflow-scrolling: touch;
   }
   .book-slot {

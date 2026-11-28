@@ -9,21 +9,33 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Final resting scrollLeft with `index` open and every other book a spine. */
-function targetScrollLeft(row: HTMLElement, index: number): number {
-  const slots = row.querySelectorAll<HTMLElement>(".book-slot");
-  if (!slots.length) return 0;
-  const gap = parseFloat(getComputedStyle(row).gap) || 0;
-  const paddingLeft = parseFloat(getComputedStyle(row).paddingLeft) || 0;
-  const paddingRight = parseFloat(getComputedStyle(row).paddingRight) || 0;
-  const spine =
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--spine")) || 50;
-  const cover = slots[0].querySelector<HTMLElement>(".book-3d")?.offsetWidth ?? slots[0].offsetWidth;
+function clampIndex(index: number): number {
+  return Math.min(BOOKS.length - 1, Math.max(0, index));
+}
 
-  let leftEdge = paddingLeft;
-  for (let i = 0; i < index; i++) leftEdge += spine + gap;
-  const totalWidth =
-    paddingLeft + cover + (slots.length - 1) * spine + (slots.length - 1) * gap + paddingRight;
+function slotMetrics(row: HTMLElement) {
+  const slots = row.querySelectorAll<HTMLElement>(".book-slot");
+  const styles = getComputedStyle(row);
+  const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+  const paddingLeft = parseFloat(styles.paddingLeft) || 0;
+  const paddingRight = parseFloat(styles.paddingRight) || 0;
+  const cover =
+    slots[0]?.querySelector<HTMLElement>(".book-3d")?.offsetWidth ??
+    (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cover-w")) || 248);
+  const unfocused = [...slots].find((slot) => !slot.classList.contains("is-focused"));
+  const spine =
+    unfocused?.offsetWidth ||
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--spine")) ||
+    50;
+  return { slots: slots.length, gap, paddingLeft, paddingRight, cover, spine };
+}
+
+/** Resting scrollLeft when `index` is the open cover and every other book is a spine. */
+function targetScrollLeft(row: HTMLElement, index: number): number {
+  const { slots, gap, paddingLeft, paddingRight, cover, spine } = slotMetrics(row);
+  if (!slots) return 0;
+  const leftEdge = paddingLeft + index * (spine + gap);
+  const totalWidth = paddingLeft + cover + (slots - 1) * (spine + gap) + paddingRight;
   const target = leftEdge + cover / 2 - row.clientWidth / 2;
   const max = Math.max(0, totalWidth - row.clientWidth);
   return Math.min(max, Math.max(0, target));
@@ -39,8 +51,7 @@ function nearestBookIndex(row: HTMLElement): number {
   const center = row.getBoundingClientRect().left + row.clientWidth / 2;
   let best = 0;
   let bestDist = Infinity;
-  const slots = row.querySelectorAll<HTMLElement>(".book-slot");
-  slots.forEach((slot, index) => {
+  row.querySelectorAll<HTMLElement>(".book-slot").forEach((slot, index) => {
     const rect = slot.getBoundingClientRect();
     const dist = Math.abs(rect.left + rect.width / 2 - center);
     if (dist < bestDist) {
@@ -58,90 +69,70 @@ export function Bookshelf() {
   const requested = normalizeBookId(params.get("book"));
   const initial = requested ? Math.max(0, bookIndex(requested)) : 0;
   const [focused, setFocused] = useState(initial);
+  const [visual, setVisual] = useState(initial);
   const [openHint, setOpenHint] = useState<{ x: number; y: number } | null>(null);
   const shelfRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef(focused);
-  /** Instant recenter before paint — initial load and viewport resize only. */
-  const shouldRecenterInstant = useRef(true);
-  /** After focus lands (swipe settle or scroll-then-open), nudge to final center. */
-  const shouldSettle = useRef(false);
-  /** Skip scroll→index sync while a programmatic scroll is in flight. */
-  const ignoreScrollSync = useRef(false);
-  /** When set, scrollend should open this index instead of deriving from position. */
-  const pendingOpenIndex = useRef<number | null>(null);
-  const snapRestoreTimer = useRef(0);
+  const programmatic = useRef(false);
+  const skipUrlSelect = useRef(false);
   const unlockTimer = useRef(0);
 
   focusedRef.current = focused;
 
-  const withSnapDisabled = useCallback((run: () => void) => {
-    const row = shelfRef.current;
-    if (!row) {
-      run();
-      return;
-    }
-    window.clearTimeout(snapRestoreTimer.current);
-    row.style.scrollSnapType = "none";
-    run();
-    snapRestoreTimer.current = window.setTimeout(() => {
-      row.style.scrollSnapType = "";
-    }, prefersReducedMotion() ? 50 : 800);
-  }, []);
-
-  const lockScrollSync = useCallback((ms: number) => {
-    ignoreScrollSync.current = true;
-    window.clearTimeout(unlockTimer.current);
-    unlockTimer.current = window.setTimeout(() => {
-      ignoreScrollSync.current = false;
-    }, ms);
-  }, []);
+  const scrollBehavior = useCallback(
+    (): ScrollBehavior => (prefersReducedMotion() ? "auto" : "smooth"),
+    [],
+  );
 
   const applyFocus = useCallback(
     (index: number) => {
-      const next = Math.min(BOOKS.length - 1, Math.max(0, index));
+      const next = clampIndex(index);
       focusedRef.current = next;
       setFocused(next);
+      setVisual(next);
+      skipUrlSelect.current = true;
       navigate({ pathname: "/", search: `?book=${BOOKS[next].id}` }, { replace: true });
     },
     [navigate],
   );
 
-  /** Arrow / keyboard / direct tap: scroll to the target spine, then open on scrollend. */
   const selectBook = useCallback(
     (index: number) => {
-      const next = Math.min(BOOKS.length - 1, Math.max(0, index));
+      const next = clampIndex(index);
       const row = shelfRef.current;
-      if (!row) {
-        applyFocus(next);
-        return;
-      }
-      if (next === focusedRef.current) return;
-
-      if (prefersReducedMotion()) {
-        applyFocus(next);
-        shouldRecenterInstant.current = true;
-        lockScrollSync(200);
-        return;
-      }
-
-      // Slide toward the final centered position while layout is still stable,
-      // then open when the scroll finishes (settle is usually a small nudge).
-      pendingOpenIndex.current = next;
-      lockScrollSync(900);
-      withSnapDisabled(() => centerBookIndex(row, next, "smooth"));
+      applyFocus(next);
+      if (!row) return;
+      programmatic.current = true;
+      window.clearTimeout(unlockTimer.current);
+      const go = () => centerBookIndex(row, next, scrollBehavior());
+      window.requestAnimationFrame(() => window.requestAnimationFrame(go));
+      unlockTimer.current = window.setTimeout(() => {
+        programmatic.current = false;
+      }, prefersReducedMotion() ? 200 : 800);
     },
-    [applyFocus, lockScrollSync, withSnapDisabled],
+    [applyFocus, scrollBehavior],
+  );
+
+  const stepBook = useCallback(
+    (delta: number) => {
+      const row = shelfRef.current;
+      const from = row ? nearestBookIndex(row) : focusedRef.current;
+      selectBook(from + delta);
+    },
+    [selectBook],
   );
 
   useEffect(() => {
+    if (skipUrlSelect.current) {
+      skipUrlSelect.current = false;
+      return;
+    }
     if (!requested) {
-      if (focusedRef.current === 0) return;
-      selectBook(0);
+      if (focusedRef.current !== 0) selectBook(0);
       return;
     }
     const index = bookIndex(requested);
     if (index < 0 || index === focusedRef.current) return;
-    // URL / pill navigation — same scroll-then-open path.
     selectBook(index);
   }, [requested, selectBook]);
 
@@ -149,96 +140,74 @@ export function Bookshelf() {
     function onKey(event: KeyboardEvent) {
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        selectBook(focused + 1);
+        stepBook(1);
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
-        selectBook(focused - 1);
+        stepBook(-1);
       } else if (event.key === "Enter") {
-        navigate(`/book/${BOOKS[focused].id}`);
+        navigate(`/book/${BOOKS[focusedRef.current].id}`);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focused, selectBook, navigate]);
+  }, [stepBook, navigate]);
 
-  // Instant recenter before paint — load + resize only.
   useLayoutEffect(() => {
-    if (!shouldRecenterInstant.current) return;
-    shouldRecenterInstant.current = false;
     const row = shelfRef.current;
     if (!row) return;
-    withSnapDisabled(() => centerBookIndex(row, focusedRef.current, "auto"));
-  }, [focused, withSnapDisabled]);
-
-  // After opening a book (swipe or scroll-then-open), settle to final center.
-  useEffect(() => {
-    if (!shouldSettle.current) return;
-    shouldSettle.current = false;
-    const row = shelfRef.current;
-    if (!row) return;
-    const frame = window.requestAnimationFrame(() => {
-      withSnapDisabled(() =>
-        centerBookIndex(row, focusedRef.current, prefersReducedMotion() ? "auto" : "smooth"),
-      );
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [focused, withSnapDisabled]);
+    centerBookIndex(row, focused, "auto");
+  }, []);
 
   useEffect(() => {
     const row = shelfRef.current;
     if (!row) return;
+    let scrollTimer = 0;
+    let frame = 0;
 
     const onScrollSettled = () => {
-      const pending = pendingOpenIndex.current;
-      if (pending !== null) {
-        pendingOpenIndex.current = null;
-        applyFocus(pending);
-        shouldSettle.current = true;
-        lockScrollSync(prefersReducedMotion() ? 200 : 750);
+      if (programmatic.current) {
+        programmatic.current = false;
+        centerBookIndex(row, focusedRef.current, "auto");
         return;
       }
-
-      if (ignoreScrollSync.current) return;
-
       const nearest = nearestBookIndex(row);
-      if (nearest === focusedRef.current) return;
-      // Swipe: adopt nearest book, then settle (never snap back to the previous book).
-      applyFocus(nearest);
-      shouldSettle.current = true;
-      lockScrollSync(prefersReducedMotion() ? 200 : 750);
+      setVisual(nearest);
+      if (nearest !== focusedRef.current) applyFocus(nearest);
+      window.requestAnimationFrame(() => centerBookIndex(row, nearest, scrollBehavior()));
     };
 
-    let scrollTimer = 0;
-    const supportsScrollEnd = "onscrollend" in window;
-    const onScrollEnd = () => {
-      window.clearTimeout(scrollTimer);
-      onScrollSettled();
-    };
     const onScroll = () => {
-      if (supportsScrollEnd) return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setVisual(nearestBookIndex(row));
+      });
+      if (programmatic.current) return;
       window.clearTimeout(scrollTimer);
       scrollTimer = window.setTimeout(onScrollSettled, 140);
     };
 
-    const onResize = () => {
-      shouldRecenterInstant.current = true;
-      lockScrollSync(200);
-      withSnapDisabled(() => centerBookIndex(row, focusedRef.current, "auto"));
+    const onScrollEnd = () => {
+      window.clearTimeout(scrollTimer);
+      onScrollSettled();
     };
 
-    if (supportsScrollEnd) row.addEventListener("scrollend", onScrollEnd);
-    else row.addEventListener("scroll", onScroll, { passive: true });
+    const onResize = () => {
+      centerBookIndex(row, focusedRef.current, "auto");
+    };
+
+    row.addEventListener("scroll", onScroll, { passive: true });
+    row.addEventListener("scrollend", onScrollEnd);
     window.addEventListener("resize", onResize);
 
     return () => {
       window.clearTimeout(scrollTimer);
-      window.clearTimeout(snapRestoreTimer.current);
       window.clearTimeout(unlockTimer.current);
-      row.removeEventListener("scrollend", onScrollEnd);
+      window.cancelAnimationFrame(frame);
       row.removeEventListener("scroll", onScroll);
+      row.removeEventListener("scrollend", onScrollEnd);
       window.removeEventListener("resize", onResize);
     };
-  }, [applyFocus, lockScrollSync, withSnapDisabled]);
+  }, [applyFocus, scrollBehavior]);
 
   const counts = useMemo(
     () =>
@@ -248,9 +217,9 @@ export function Bookshelf() {
     [recipes],
   );
 
-  const book = BOOKS[focused];
-  const atStart = focused === 0;
-  const atEnd = focused === BOOKS.length - 1;
+  const book = BOOKS[visual];
+  const atStart = visual === 0;
+  const atEnd = visual === BOOKS.length - 1;
 
   return (
     <main className="shelf-page">
@@ -277,7 +246,7 @@ export function Bookshelf() {
           className="round-btn"
           aria-label="Previous book"
           disabled={atStart}
-          onClick={() => selectBook(focused - 1)}
+          onClick={() => stepBook(-1)}
         >
           ‹
         </button>
@@ -290,7 +259,7 @@ export function Bookshelf() {
           className="round-btn"
           aria-label="Next book"
           disabled={atEnd}
-          onClick={() => selectBook(focused + 1)}
+          onClick={() => stepBook(1)}
         >
           ›
         </button>
