@@ -197,11 +197,14 @@ p { margin: 0; }
   justify-content: flex-start;
   gap: 8px;
   perspective: 1800px;
-  padding: 40px max(24px, calc(50% - var(--cover-w) / 2)) 56px;
+  padding: 40px max(24px, calc(50% - var(--spine) / 2)) 56px;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x mandatory;
+  overflow-anchor: none;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: none;
   scrollbar-width: none;
+  touch-action: pan-x;
 }
 .shelf-row::-webkit-scrollbar { display: none; }
 .shelf-shadow {
@@ -216,7 +219,10 @@ p { margin: 0; }
 }
 
 .book-slot {
-  flex: 0 0 var(--spine);
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: var(--slot-spine, var(--spine));
+  min-width: 0;
   height: var(--cover-h);
   position: relative;
   border: 0;
@@ -226,10 +232,9 @@ p { margin: 0; }
   transform-style: preserve-3d;
   overflow: hidden;
   scroll-snap-align: center;
-  transition: flex-basis 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .book-slot.is-focused {
-  flex-basis: var(--cover-w);
+  flex-basis: var(--slot-cover, var(--cover-w));
   z-index: 2;
   cursor: none;
   overflow: visible;
@@ -242,6 +247,8 @@ p { margin: 0; }
   transform-origin: left center;
   transform: rotateY(88deg);
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .book-slot.is-focused .book-3d {
   transform: rotateY(0deg) translateZ(18px);
@@ -861,17 +868,14 @@ p { margin: 0; }
   }
   .shelf-row {
     scroll-snap-type: none;
-    padding: 28px max(28px, calc(50% - var(--cover-w) / 2)) 48px;
+    padding: 28px max(28px, calc(50% - var(--spine) / 2)) 48px;
+    -webkit-overflow-scrolling: touch;
   }
   .book-slot {
-    transition: none;
     overflow: hidden;
   }
   .book-slot.is-focused {
     overflow: visible;
-  }
-  .book-3d {
-    transition: none;
   }
   .book-slot.is-focused .book-3d {
     transform: rotateY(0deg);
@@ -949,6 +953,13 @@ p { margin: 0; }
   .cover-art h2 { font-size: 28px; }
   .header-actions { gap: 8px; }
   .shelf-caption { min-width: 0; flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-slot,
+  .book-3d {
+    transition: none;
+  }
 }
 
 @media (hover: none) {
